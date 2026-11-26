@@ -1,4 +1,5 @@
 const AlternateRevenue = require("../../models/sales/AlternateRevenue");
+const AlternateClient = require("../../models/sales/AlternateClients");
 const Company = require("../../models/hr/Company");
 const mongoose = require("mongoose");
 const transformRevenues = require("../../utils/revenueFormatter");
@@ -18,6 +19,33 @@ const calculateRevenueAmounts = (taxableAmount, gstRate = 18) => {
   const invoiceAmount = Number((taxable + gst).toFixed(2));
 
   return { taxableAmount: taxable, gst, invoiceAmount };
+};
+
+const escapeRegExp = (value = "") =>
+  value.toString().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const findOrCreateAlternateClient = async ({
+  clientName,
+  particulars,
+  startDate,
+}) => {
+  const normalizedName = clientName?.toString().trim();
+  if (!normalizedName) return null;
+
+  const existingClient = await AlternateClient.findOne({
+    clientName: {
+      $regex: new RegExp(`^${escapeRegExp(normalizedName)}$`, "i"),
+    },
+  });
+
+  if (existingClient) return existingClient;
+
+  return AlternateClient.create({
+    clientName: normalizedName,
+    particulars: particulars?.toString().trim() || "",
+    startDate: startDate || null,
+    isActive: true,
+  });
 };
 
 const getInvoiceDate = (value) => {
@@ -236,6 +264,12 @@ const saveAlternateRevenueRecord = async (req, res, next) => {
 
     let record;
 
+    await findOrCreateAlternateClient({
+      clientName: payload.name,
+      particulars: payload.particulars,
+      startDate: payload.invoiceCreationDate,
+    });
+
     if (hasValidRevenueId && existingRevenue) {
       record = await AlternateRevenue.findOneAndUpdate(
         { _id: revenueId, company: req.company },
@@ -287,6 +321,158 @@ const getAlternateRevenues = async (req, res, next) => {
     return res.status(200).json(payload);
   } catch (error) {
     next(error);
+  }
+};
+
+const getAlternateClients = async (req, res, next) => {
+  try {
+    const revenueRows = await AlternateRevenue.find(
+      req.company ? { company: req.company } : {},
+      { name: 1, particulars: 1, invoiceCreationDate: 1 },
+    )
+      .sort({ invoiceCreationDate: -1 })
+      .lean()
+      .exec();
+
+    const uniqueRevenueClients = new Map();
+    revenueRows.forEach((row) => {
+      const clientName = row.name?.toString().trim();
+      const normalizedName = clientName?.toLowerCase();
+      if (!normalizedName || uniqueRevenueClients.has(normalizedName)) return;
+      uniqueRevenueClients.set(normalizedName, row);
+    });
+
+    await Promise.all(
+      [...uniqueRevenueClients.values()].map((row) =>
+        findOrCreateAlternateClient({
+          clientName: row.name,
+          particulars: row.particulars,
+          startDate: row.invoiceCreationDate,
+        }),
+      ),
+    );
+
+    const clients = await AlternateClient.find()
+      .sort({ clientName: 1 })
+      .lean()
+      .exec();
+    const mergedClients = [];
+    const seenNames = new Set();
+
+    clients.forEach((client) => {
+      const normalizedName = client.clientName?.trim().toLowerCase();
+      if (!normalizedName || seenNames.has(normalizedName)) return;
+      seenNames.add(normalizedName);
+      mergedClients.push({
+        ...client,
+        isActive: client.isActive !== false,
+      });
+    });
+
+    revenueRows.forEach((row) => {
+      const clientName = row.name?.toString().trim();
+      const normalizedName = clientName?.toLowerCase();
+      if (!normalizedName || seenNames.has(normalizedName)) return;
+      seenNames.add(normalizedName);
+      mergedClients.push({
+        _id: null,
+        clientName,
+        particulars: row.particulars || "",
+        startDate: row.invoiceCreationDate || null,
+        isActive: true,
+      });
+    });
+
+    return res.status(200).json(mergedClients);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const createAlternateClient = async (req, res, next) => {
+  try {
+    const clientName = req.body?.clientName?.toString().trim();
+    if (!clientName) {
+      return res.status(400).json({ message: "Client name is required" });
+    }
+
+    const existingClient = await AlternateClient.findOne({
+      clientName: { $regex: new RegExp(`^${escapeRegExp(clientName)}$`, "i") },
+    }).lean();
+    if (existingClient) {
+      return res.status(409).json({ message: "Alternate client already exists" });
+    }
+
+    const client = await AlternateClient.create({
+      clientName,
+      particulars: req.body?.particulars?.toString().trim() || "",
+      startDate: req.body?.startDate || null,
+      isActive: req.body?.isActive !== false,
+    });
+    return res.status(201).json({
+      message: "Alternate client added successfully",
+      data: client,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const updateAlternateClient = async (req, res, next) => {
+  try {
+    const clientName = req.body?.clientName?.toString().trim();
+    if (!clientName) {
+      return res.status(400).json({ message: "Client name is required" });
+    }
+
+    const duplicateClient = await AlternateClient.findOne({
+      _id: { $ne: req.params.id },
+      clientName: { $regex: new RegExp(`^${escapeRegExp(clientName)}$`, "i") },
+    }).lean();
+    if (duplicateClient) {
+      return res.status(409).json({ message: "Alternate client already exists" });
+    }
+
+    const client = await AlternateClient.findByIdAndUpdate(
+      req.params.id,
+      {
+        clientName,
+        particulars: req.body?.particulars?.toString().trim() || "",
+        startDate: req.body?.startDate || null,
+        isActive: req.body?.isActive !== false,
+      },
+      { new: true, runValidators: true },
+    );
+    if (!client) {
+      return res.status(404).json({ message: "Alternate client not found" });
+    }
+
+    return res.status(200).json({
+      message: "Alternate client updated successfully",
+      data: client,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const updateAlternateClientStatus = async (req, res, next) => {
+  try {
+    const client = await AlternateClient.findByIdAndUpdate(
+      req.params.id,
+      { isActive: Boolean(req.body?.isActive) },
+      { new: true, runValidators: true },
+    );
+    if (!client) {
+      return res.status(404).json({ message: "Alternate client not found" });
+    }
+
+    return res.status(200).json({
+      message: `Alternate client marked as ${client.isActive ? "active" : "inactive"}`,
+      data: client,
+    });
+  } catch (error) {
+    return next(error);
   }
 };
 
@@ -400,4 +586,8 @@ module.exports = {
   getAlternateRevenues,
   updateAlternateRevenueInvoice,
   bulkInsertAlternateRevenue,
+  getAlternateClients,
+  createAlternateClient,
+  updateAlternateClient,
+  updateAlternateClientStatus,
 };

@@ -162,7 +162,7 @@ const ExternalClient = () => {
             id: 1,
             name: "External Meetings",
             data: meetingVisitorsCount,
-            route: "/app/dashboard/sales-dashboard/mix-bag/external-client/meetings/external-companies",
+            route: "/app/dashboard/sales-dashboard/mix-bag/clients/external-meeting",
             permission: PERMISSIONS.SALES_EXTERNAL_CLIENT_MEETINGS_COMPANIES.value,
         },
         {

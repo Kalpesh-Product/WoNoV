@@ -12,38 +12,50 @@ const PROJECTED_UNIQUE_CLIENT_SERIES = [
   "Projected Virtual Office",
   "Projected Co-Working",
   "Projected External Meetings",
-  "Projected Open Desk",
+  "Projected Day Pass",
+  "Projected Workation",
+  "Projected Alternate",
 ];
 const ACTUAL_UNIQUE_CLIENT_SERIES = [
   "Virtual Office",
   "Co-Working",
   "External Meetings",
-  "Open Desk",
+  "Day Pass",
+  "Workation",
+  "Alternate",
 ];
 const ACTUAL_UNIQUE_CLIENT_SERIES_WITH_FLEXIBLE_DESK = [
   "Co-Working",
   "Flexible Desk",
   "Virtual Office",
   "External Meetings",
-  "Open Desk",
+  "Day Pass",
+  "Workation",
+  "Alternate",
 ];
-const FLEXIBLE_DESK_UNIQUE_CLIENT_COLOR = "#B4CCBF";
+const FLEXIBLE_DESK_UNIQUE_CLIENT_COLOR = "#5B9AA0";
 const PROJECTED_UNIQUE_CLIENT_COLORS = [
   "#3c3c3c",
   "#616161",
   "#787878",
   "#b4b4b4",
+  "#c4c4c4",
+  "#d4d4d4",
 ];
 const UNIQUE_CLIENT_COLOR_BY_SERIES = {
   "Co-Working": "#1E3D73",
   "Flexible Desk": FLEXIBLE_DESK_UNIQUE_CLIENT_COLOR,
   "Virtual Office": "#80BF01",
-  "External Meetings": "#FFC300",
-  "Open Desk": "#00C8D7",
+  "External Meetings": "#D4AC6E",
+  "Day Pass": "#00C8D7",
+  Workation: "#36486B",
+  Alternate: "#4040A1",
   "Projected Co-Working": PROJECTED_UNIQUE_CLIENT_COLORS[0],
   "Projected Virtual Office": PROJECTED_UNIQUE_CLIENT_COLORS[1],
   "Projected External Meetings": PROJECTED_UNIQUE_CLIENT_COLORS[2],
-  "Projected Open Desk": PROJECTED_UNIQUE_CLIENT_COLORS[3],
+  "Projected Day Pass": PROJECTED_UNIQUE_CLIENT_COLORS[3],
+  "Projected Workation": PROJECTED_UNIQUE_CLIENT_COLORS[4],
+  "Projected Alternate": PROJECTED_UNIQUE_CLIENT_COLORS[5],
 };
 
 // Same verticals / colors / tooltip labels as the investor
@@ -63,8 +75,8 @@ const INVESTOR_ALL_CLIENT_COLORS = {
   "Virtual Office": "#80BF01",
   Meeting: "#2196F3",
   "Day Pass": "#F59E0B",
-  Alternate: "#80CED6",
-  Workation: "#54C4A7",
+  Alternate: "#4040A1",
+  Workation: "#36486B",
 };
 const INVESTOR_ALL_CLIENT_TOOLTIP_LABELS = {
   "Co-Working": "Co-Working",
@@ -72,7 +84,7 @@ const INVESTOR_ALL_CLIENT_TOOLTIP_LABELS = {
   "Virtual Office": "Virtual Office",
   Meeting: "Meetings",
   "Day Pass": "Day Pass",
-  Alternate: "Alt Revenues",
+  Alternate: "Alternate",
   Workation: "Workation",
 };
 const INVESTOR_PROJECTED_ALL_CLIENT_COLORS = [
@@ -131,6 +143,7 @@ const LeadsLayout = ({
   noOuterPadding = false,
   investorBlueStyle = false,
   investorTitleAmountChip = false,
+  titleAmountChip = false,
   hideFinancialYearControls = false,
   actualMonthLag = 2,
   virtualOfficeOnly = false,
@@ -146,6 +159,7 @@ const LeadsLayout = ({
   showAllInvestorClientVerticals = false,
   hideWorkationInAllInvestorVerticals = false,
   includeFlexibleDeskSeries = false,
+  rankStacksByValue = false,
 }) => {
   const singleSeriesOnly =
     virtualOfficeOnly || Boolean(focusedClientSeries);
@@ -262,13 +276,12 @@ const LeadsLayout = ({
         "Workation": 0,
         "Virtualoffice": 0,
         "External Meetings": 0,
-        "Open Desk": 0,
+        "Day Pass": 0,
         // Investor "all verticals" mode uses the same labels as the income chart.
         "Co-Working": 0,
         "Flexy Desk": 0,
         "Virtual Office": 0,
         Meeting: 0,
-        "Day Pass": 0,
         Alternate: 0,
       };
 
@@ -314,8 +327,9 @@ const LeadsLayout = ({
             ...(includeFlexibleDeskSeries ? ["Flexible Desk"] : []),
             "Virtualoffice",
             "External Meetings",
-            "Open Desk",
-            ...(focusedActualSeries === "Workation" ? ["Workation"] : []),
+            "Day Pass",
+            "Workation",
+            "Alternate",
           ];
 
       return countableData.reduce(
@@ -333,7 +347,6 @@ const LeadsLayout = ({
       investorBlueStyle,
       transformedData,
       actualMonthLag,
-      focusedActualSeries,
       allInvestorClientVerticals,
       useAllInvestorVerticals,
       includeFlexibleDeskSeries,
@@ -383,10 +396,6 @@ const LeadsLayout = ({
             ? [{ name: "Flexible Desk", key: "Flexible Desk" }]
             : []),
           {
-            name: "Workation",
-            key: "Workation",
-          },
-          {
             name: "Virtual Office",
             key: "Virtualoffice",
           },
@@ -395,8 +404,16 @@ const LeadsLayout = ({
             key: "External Meetings",
           },
           {
-            name: "Open Desk",
-            key: "Open Desk",
+            name: "Day Pass",
+            key: "Day Pass",
+          },
+          {
+            name: "Workation",
+            key: "Workation",
+          },
+          {
+            name: "Alternate",
+            key: "Alternate",
           },
         ];
     const actualSeries = actualSeriesDefinitions.map(({ name, key }) => ({
@@ -605,6 +622,49 @@ const LeadsLayout = ({
     investorRankedMonthEntries,
     resolvedActualSeriesNames,
   ]);
+  const valueRankedMonthEntries = useMemo(() => {
+    if (!rankStacksByValue || investorBlueStyle) return [];
+
+    return financialYearMonths.map((_, monthIndex) =>
+      scopedUniqueClientsData
+        .map((series) => ({
+          name: series.name,
+          value: Number(series.data[monthIndex]) || 0,
+          color: getUniqueClientSeriesColor(series.name),
+        }))
+        .sort((first, second) => second.value - first.value),
+    );
+  }, [
+    financialYearMonths,
+    getUniqueClientSeriesColor,
+    investorBlueStyle,
+    rankStacksByValue,
+    scopedUniqueClientsData,
+  ]);
+  const valueRankedSeries = useMemo(() => {
+    if (!rankStacksByValue || investorBlueStyle) return [];
+
+    return Array.from(
+      { length: scopedUniqueClientsData.length },
+      (_, rankIndex) => ({
+        name: `Rank ${rankIndex + 1}`,
+        data: valueRankedMonthEntries.map((entries, monthIndex) => {
+          const entry = entries[rankIndex];
+          return {
+            x: financialYearMonths[monthIndex],
+            y: entry?.value || 0,
+            fillColor: entry?.color || "#6B7280",
+          };
+        }),
+      }),
+    );
+  }, [
+    financialYearMonths,
+    investorBlueStyle,
+    rankStacksByValue,
+    scopedUniqueClientsData.length,
+    valueRankedMonthEntries,
+  ]);
   const hasWorkationClientData = useMemo(
     () =>
       scopedUniqueClientsData.some(
@@ -709,7 +769,7 @@ const LeadsLayout = ({
           }
         : {}),
     },
-    legend: investorBlueStyle
+    legend: investorBlueStyle || rankStacksByValue
       ? { show: false }
       : {
           position: "top",
@@ -803,21 +863,60 @@ const LeadsLayout = ({
       : {
           shared: true,
           intersect: false,
-          y: { formatter: (val) => `${val} Clients` },
+          custom: ({ series, dataPointIndex, w }) => {
+            const monthLabel =
+              w?.globals?.categoryLabels?.[dataPointIndex] ||
+              w?.config?.xaxis?.categories?.[dataPointIndex] ||
+              "";
+            const entries = rankStacksByValue
+              ? valueRankedMonthEntries[dataPointIndex] || []
+              : (series || [])
+                  .map((seriesData, seriesIndex) => ({
+                    name:
+                      w?.globals?.seriesNames?.[seriesIndex] ||
+                      `Series ${seriesIndex + 1}`,
+                    value: Number(seriesData?.[dataPointIndex]) || 0,
+                    color:
+                      w?.globals?.colors?.[seriesIndex] ||
+                      getUniqueClientSeriesColor(
+                        w?.globals?.seriesNames?.[seriesIndex] || "",
+                      ),
+                  }))
+                  .sort((first, second) => second.value - first.value);
+            const overallClientsCount = entries.reduce(
+              (total, entry) => total + entry.value,
+              0,
+            );
+
+            return `
+              <div style="min-width:190px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;box-shadow:0 4px 14px rgba(15,23,42,.18);">
+                <div style="padding:8px 12px;background:#eef2f6;border-bottom:1px solid #dbe1e8;font-size:12px;color:#1f2937;font-weight:600;">${monthLabel}</div>
+                ${entries
+                  .map(
+                    (entry) => `
+                      <div style="display:flex;align-items:center;gap:8px;padding:7px 12px;font-size:12px;color:#111827;white-space:nowrap;">
+                        <span style="display:flex;align-items:center;gap:7px;">
+                          <span style="width:9px;height:9px;border-radius:50%;background:${entry.color};display:inline-block;"></span>
+                          ${entry.name}:
+                        </span>
+                        <strong>${entry.value} Clients</strong>
+                      </div>
+                    `,
+                  )
+                  .join("")}
+                <hr style="margin:2px 10px 0;border:0;border-top:1px solid #d9dce1;" />
+                <div style="display:flex;align-items:center;gap:8px;padding:9px 12px;font-size:12px;color:#111827;white-space:nowrap;">
+                  <span style="width:9px;height:9px;border-radius:50%;background:#98FB98;display:inline-block;"></span>
+                  <span>Overall Client:</span>
+                  <strong>${overallClientsCount} Clients</strong>
+                </div>
+              </div>
+            `;
+          },
         },
-    colors: investorBlueStyle
-      ? scopedUniqueClientsData.map(({ name }) =>
-          getUniqueClientSeriesColor(name),
-        )
-      : includeFlexibleDeskSeries
-        ? [
-            "#1E3D73",
-            FLEXIBLE_DESK_UNIQUE_CLIENT_COLOR,
-            "#80BF01",
-            "#FFC300",
-            "#00C8D7",
-          ]
-        : ["#1E3D73", "#80BF01", "#FFC300", "#00C8D7", "#FF5733"],
+    colors: scopedUniqueClientsData.map(({ name }) =>
+      getUniqueClientSeriesColor(name),
+    ),
   };
 
   const handlePrevYear = () => {
@@ -845,7 +944,9 @@ const LeadsLayout = ({
         bodyBorderColor={investorBlueStyle ? "#9FB2CF" : undefined}
         padding
         title={title}
-        TitleAmount={investorBlueStyle ? "" : resolvedTitleAmount}
+        TitleAmount={
+          investorBlueStyle || titleAmountChip ? "" : resolvedTitleAmount
+        }
         headerRightContent={
           investorBlueStyle ? (
             <span
@@ -855,6 +956,10 @@ const LeadsLayout = ({
                   : "text-widgetTitle font-pmedium uppercase text-[#1E3D73]"
               }
             >
+              {resolvedTitleAmount}
+            </span>
+          ) : titleAmountChip ? (
+            <span className="rounded-lg border border-[#aec6fb] bg-[#dbe4ff] px-3 py-2 text-body font-pmedium uppercase text-[#274784]">
               {resolvedTitleAmount}
             </span>
           ) : null
@@ -909,16 +1014,48 @@ const LeadsLayout = ({
         ) : null}
 
         <div className={investorBlueStyle ? "investor-unique-clients-chart" : ""}>
+          {rankStacksByValue && !investorBlueStyle ? (
+            <div className="flex flex-wrap items-center justify-center gap-4 pb-2 pt-1">
+              {resolvedActualSeriesNames.map((seriesName) => (
+                <div
+                  key={seriesName}
+                  className="flex items-center gap-1 text-xs text-[#1E3D73]"
+                >
+                  <span
+                    className="h-3 w-3"
+                    style={{
+                      backgroundColor: getUniqueClientSeriesColor(seriesName),
+                    }}
+                  />
+                  <span>{seriesName}</span>
+                </div>
+              ))}
+            </div>
+          ) : null}
           <BarGraph
-            data={investorBlueStyle ? investorRankedSeries : uniqueClientsData}
+            data={
+              investorBlueStyle
+                ? investorRankedSeries
+                : rankStacksByValue
+                  ? valueRankedSeries
+                  : uniqueClientsData
+            }
             title=""
             options={barChartOptions}
             height={investorBlueStyle ? 350 : 400}
           />
         </div>
         {!hideFinancialYearControls && (
-          <div className="flex justify-center items-center pt-4 pb-2">
-            <div className="flex items-center gap-[2px] mt-4">
+          <div
+            className={`flex justify-center items-center ${
+              rankStacksByValue ? "-mt-8 pb-0 pt-0" : "pb-2 pt-4"
+            }`}
+          >
+            <div
+              className={`flex items-center gap-[2px] ${
+                rankStacksByValue ? "mt-0" : "mt-4"
+              }`}
+            >
               <SecondaryButton
                 title={<MdNavigateBefore />}
                 handleSubmit={handlePrevYear}
@@ -937,7 +1074,13 @@ const LeadsLayout = ({
         )}
 
         {children ? (
-          <div className="mt-6 border-t border-borderGray pt-4">{children}</div>
+          <div
+            className={`border-t border-borderGray pt-4 ${
+              rankStacksByValue ? "mt-2" : "mt-6"
+            }`}
+          >
+            {children}
+          </div>
         ) : null}
       </WidgetSection>
 

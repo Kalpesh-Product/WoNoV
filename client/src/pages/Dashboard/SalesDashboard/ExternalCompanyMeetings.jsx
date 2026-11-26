@@ -14,7 +14,9 @@ const ExternalCompanyMeetings = () => {
   const location = useLocation();
   const selectedClient = useSelector((state) => state.client.selectedClient);
 
-  const isOpenDeskView = location.pathname.includes("/open-desk/");
+  const isOpenDeskView =
+    location.pathname.includes("/open-desk/") ||
+    location.pathname.includes("/clients/day-pass/");
 
   const decodedClientName = useMemo(
     () => decodeURIComponent(clientName || ""),

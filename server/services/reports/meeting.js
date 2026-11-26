@@ -469,12 +469,16 @@ const fetchMeetingReportService = async ({
         .toLowerCase()
         .includes("top management"),
     );
+    const isSalesExternalMeetingClientView =
+      searchContext === "sales-external-meeting-clients";
     const canViewAllMeetings =
       (userDepartments || []).some((department) =>
         ["Administration", "Top Management", "Finance"].includes(
           department?.name,
         ),
-      ) || (calendar && hasTopManagementRole);
+      ) ||
+      (calendar && hasTopManagementRole) ||
+      isSalesExternalMeetingClientView;
 
     if (!canViewAllMeetings && !currentUserId) {
       total = 0;
@@ -716,7 +720,8 @@ const fetchMeetingReportService = async ({
             ? null
             : "BIZNest",
         externalClient: meeting.externalClient
-          ? meeting.externalClient.registeredClientCompany
+          ? meeting.externalClient.registeredClientCompany ||
+            meeting.externalClient.visitorCompany
           : null,
         paymentAmount: meeting.paymentAmount ?? null,
         paymentBaseAmount: meeting.paymentBaseAmount ?? null,
@@ -769,7 +774,8 @@ const fetchMeetingReportService = async ({
         const client = meeting.client
           ? meeting?.client?.clientName
           : meeting?.externalClient
-            ? meeting?.externalClient?.registeredClientCompany
+            ? meeting?.externalClient?.registeredClientCompany ||
+              meeting?.externalClient?.visitorCompany
             : meeting.meetingType === "Internal"
               ? "BIZ Nest"
               : null;

@@ -24,6 +24,7 @@ require("./sales/Lead");
 require("./sales/ClientService");
 require("./sales/CoworkingClient");
 require("./sales/WorkationClients");
+require("./sales/AlternateClients");
 require("./sales/CoworkingMembers");
 
 //Tickets

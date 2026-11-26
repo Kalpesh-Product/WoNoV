@@ -2739,6 +2739,20 @@ export const PERMISSIONS = {
     type: "read",
     route: "/app/dashboard/sales-dashboard/mix-bag/clients/flexible-desk",
   },
+  SALES_WORKATION_CLIENTS: {
+    value: "sales_workation_clients",
+    title: "WORKATION CLIENTS",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/mix-bag/clients/workation",
+  },
+  SALES_ALTERNATE_CLIENTS: {
+    value: "sales_alternate_clients",
+    title: "ALTERNATE CLIENTS",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/mix-bag/clients/alternate",
+  },
   SALES_PARTNERS_MIX_BAG: {
     value: "sales_partners_mix_bag_card",
     title: "ENQUIRIES",
@@ -2769,7 +2783,7 @@ export const PERMISSIONS = {
     type: "read",
     access: "page",
     route:
-      "/app/dashboard/sales-dashboard/mix-bag/external-client/meetings/external-companies",
+      "/app/dashboard/sales-dashboard/mix-bag/clients/external-meeting",
   },
   SALES_EXTERNAL_COMPANY_CLIENT_DETAILS: {
     value: "sales_external_company_client_details_tab",
@@ -2777,7 +2791,7 @@ export const PERMISSIONS = {
     type: "read",
     access: "page",
     route:
-      "/app/dashboard/sales-dashboard/mix-bag/external-client/meetings/external-companies/:clientName/client-details",
+      "/app/dashboard/sales-dashboard/mix-bag/clients/external-meeting/:clientName/client-details",
   },
   SALES_EXTERNAL_COMPANY_MEETINGS: {
     value: "sales_external_company_meetings_tab",
@@ -2785,7 +2799,7 @@ export const PERMISSIONS = {
     type: "read",
     access: "page",
     route:
-      "/app/dashboard/sales-dashboard/mix-bag/external-client/meetings/external-companies/:clientName/meetings",
+      "/app/dashboard/sales-dashboard/mix-bag/clients/external-meeting/:clientName/meetings",
   },
   SALES_EXTERNAL_COMPANY_REVENUE: {
     value: "sales_external_company_revenue_tab",
@@ -2793,7 +2807,7 @@ export const PERMISSIONS = {
     type: "read",
     access: "page",
     route:
-      "/app/dashboard/sales-dashboard/mix-bag/external-client/meetings/external-companies/:clientName/revenue",
+      "/app/dashboard/sales-dashboard/mix-bag/clients/external-meeting/:clientName/revenue",
   },
   SALES_EXTERNAL_COMPANY_MEMBERS: {
     value: "sales_external_company_members_tab",
@@ -2801,7 +2815,7 @@ export const PERMISSIONS = {
     type: "read",
     access: "page",
     route:
-      "/app/dashboard/sales-dashboard/mix-bag/external-client/meetings/external-companies/:clientName/members",
+      "/app/dashboard/sales-dashboard/mix-bag/clients/external-meeting/:clientName/members",
   },
   SALES_EXTERNAL_CLIENT_OPEN_DESK_COMPANIES: {
     value: "sales_external_client_open_desk_companies_card",

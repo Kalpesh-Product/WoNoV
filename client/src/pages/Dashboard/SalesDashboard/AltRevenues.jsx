@@ -131,6 +131,14 @@ const AltRevenues = ({ showChart = true }) => {
       },
     });
 
+  const { data: alternateClients = [] } = useQuery({
+    queryKey: ["alternateClients"],
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/get-alternate-clients");
+      return Array.isArray(response.data) ? response.data : [];
+    },
+  });
+
   useEffect(() => {
     const { gst, invoiceAmount } = getAlternateTaxCalculations(
       taxableAmountValue,
@@ -188,24 +196,20 @@ const AltRevenues = ({ showChart = true }) => {
     [alternateRevenueRows],
   );
 
-  const clientOptions = useMemo(() => {
-    const clientMap = new Map();
-    const pushName = (value) => {
-      const trimmedName = String(value || "").trim();
-      if (!trimmedName) return;
-
-      const normalizedName = trimmedName.toLowerCase();
-      if (!clientMap.has(normalizedName)) {
-        clientMap.set(normalizedName, trimmedName);
-      }
-    };
-
-    alternateRevenueRows.forEach((item) =>
-      pushName(item?.name || item?.clientName || item?.clientInvoiceName),
-    );
-
-    return [...clientMap.values()].sort((a, b) => a.localeCompare(b));
-  }, [alternateRevenueRows]);
+  const clientOptions = useMemo(
+    () =>
+      alternateClients
+        .filter(
+          (client) => client?.clientName && client?.isActive !== false,
+        )
+        .map((client) => ({
+          value: client.clientName,
+          label: client.clientName,
+          particulars: client.particulars || "",
+        }))
+        .sort((first, second) => first.label.localeCompare(second.label)),
+    [alternateClients],
+  );
 
   const graphData = useMemo(
     () =>
@@ -335,7 +339,11 @@ const AltRevenues = ({ showChart = true }) => {
     );
 
     reset({
-      selectedClient: row.name || "",
+      selectedClient: clientOptions.some(
+        (option) => option.value === row.name,
+      )
+        ? row.name
+        : "",
       name: row.name || "",
       clientInvoiceName: row.clientInvoiceName || "",
       particulars: row.particulars || "",
@@ -370,8 +378,8 @@ const AltRevenues = ({ showChart = true }) => {
       mutationFn: async (values) => {
         const formData = new FormData();
         formData.append("revenueId", editRow?._id || "");
-        if (values.selectedClient) {
-          formData.append("originalClientName", values.selectedClient);
+        if (editRow?.name) {
+          formData.append("originalClientName", editRow.name);
         }
 
         [
@@ -420,6 +428,8 @@ const AltRevenues = ({ showChart = true }) => {
             : "Alternate revenue added successfully",
         );
         queryClient.invalidateQueries({ queryKey: ["alternateRevenue"] });
+        queryClient.invalidateQueries({ queryKey: ["alternateClients"] });
+        queryClient.invalidateQueries({ queryKey: ["view-clients-alternate"] });
         closeFormModal();
       },
       onError: (error) =>
@@ -754,8 +764,15 @@ const AltRevenues = ({ showChart = true }) => {
                       Boolean(String(clientNameValue || "").trim())
                     }
                     onChange={(event) => {
-                      field.onChange(event);
-                      setValue("name", event.target.value, {
+                      const value = event.target.value;
+                      field.onChange(value);
+                      const selectedOption = clientOptions.find(
+                        (option) => option.value === value,
+                      );
+                      setValue("name", selectedOption?.label || "", {
+                        shouldDirty: true,
+                      });
+                      setValue("particulars", selectedOption?.particulars || "", {
                         shouldDirty: true,
                       });
                     }}
@@ -764,8 +781,8 @@ const AltRevenues = ({ showChart = true }) => {
                   >
                     <MenuItem value="">Select Client</MenuItem>
                     {clientOptions.map((client) => (
-                      <MenuItem key={client} value={client}>
-                        {client}
+                      <MenuItem key={client.value} value={client.value}>
+                        {client.label}
                       </MenuItem>
                     ))}
                   </TextField>

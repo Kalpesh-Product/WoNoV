@@ -9,6 +9,7 @@ const DataCard = ({
   route,
   onClick,
   statusSummary,
+  statusLabels,
   loading = false,
   variant = "default",
   accentColor = "#1E3D73",
@@ -33,8 +34,17 @@ const DataCard = ({
       <motion.button
         type="button"
         onClick={hasRoute ? handleCardAction : undefined}
+        initial="rest"
+        whileHover={hasRoute ? "hover" : undefined}
         whileTap={hasRoute ? { scale: 0.99 } : undefined}
-        className={`min-h-[132px] w-full rounded-[34px] border border-l-[5px] border-slate-100 bg-white px-6 py-5 text-left shadow-[0_3px_12px_rgba(15,23,42,0.08)] ${
+        variants={{
+          rest: { scale: 1 },
+          hover: {
+            scale: 1.03,
+            transition: { duration: 0.2, ease: "easeOut" },
+          },
+        }}
+        className={`group relative min-h-[132px] w-full rounded-[34px] border border-l-[5px] border-slate-100 bg-white px-6 py-5 text-left shadow-[0_3px_12px_rgba(15,23,42,0.08)] transition-shadow duration-200 hover:border-primary hover:shadow-xl ${
           hasRoute ? "cursor-pointer" : "cursor-default"
         }`}
         style={{ borderLeftColor: accentColor }}
@@ -48,11 +58,11 @@ const DataCard = ({
             >
               {icon}
             </span>
-            <div className="truncate text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-900">
+            <div className="truncate text-[13px] font-semibold uppercase tracking-[0.12em] text-slate-900">
               {title}
             </div>
           </div>
-          <div className="shrink-0 text-xl font-bold leading-none text-slate-900">
+          <div className="shrink-0 text-2xl font-bold leading-none text-slate-900">
             {loading ? (
               <div className="h-6 w-12 animate-pulse rounded bg-gray-200" />
             ) : (
@@ -61,20 +71,52 @@ const DataCard = ({
           </div>
         </div>
 
-        <div className="mt-5 flex flex-wrap items-center gap-2">
-          {loading ? (
-            <div className="h-5 w-32 animate-pulse rounded bg-gray-200" />
-          ) : statusSummary ? (
-            <>
-              <span className="inline-flex h-[24px] items-center justify-center rounded-[5px] border border-emerald-200 bg-emerald-50 px-2.5 text-[10px] font-semibold uppercase leading-none text-emerald-700">
-                Active: {statusSummary.active ?? 0}
-              </span>
-              <span className="inline-flex h-[24px] items-center justify-center rounded-[5px] border border-orange-200 bg-orange-50 px-2.5 text-[10px] font-semibold uppercase leading-none text-orange-700">
-                Inactive: {statusSummary.inactive ?? 0}
-              </span>
-            </>
-          ) : null}
+        <div className="mt-5 flex items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-2">
+            {loading ? (
+              <div className="h-5 w-32 animate-pulse rounded bg-gray-200" />
+            ) : statusSummary ? (
+              <>
+                <span
+                  className="inline-flex h-[26px] items-center justify-center rounded-[5px] border border-transparent px-2.5 text-[11px] font-semibold uppercase leading-none text-[#176B3A]"
+                  style={{
+                    background:
+                      "linear-gradient(to right, #3CB37180 0%, #3CB37145 100%)",
+                  }}
+                >
+                  {statusLabels?.active ?? "Active"}: {statusSummary.active ?? 0}
+                </span>
+                <span
+                  className="inline-flex h-[26px] items-center justify-center rounded-[5px] border border-transparent px-2.5 text-[11px] font-semibold uppercase leading-none text-[#8B0000]"
+                  style={{
+                    background:
+                      "linear-gradient(to right, #FF000080 0%, #FF000045 100%)",
+                  }}
+                >
+                  {statusLabels?.inactive ?? "Inactive"}: {statusSummary.inactive ?? 0}
+                </span>
+              </>
+            ) : null}
+          </div>
+
         </div>
+
+        {hasRoute && (
+          <motion.span
+            variants={{
+              rest: { x: 0 },
+              hover: { x: 4 },
+            }}
+            transition={{ type: "spring", stiffness: 300 }}
+            className="absolute bottom-3 right-7 flex items-center justify-center"
+          >
+            <FaArrowRight
+              size={12}
+              className="text-slate-900"
+              aria-hidden="true"
+            />
+          </motion.span>
+        )}
       </motion.button>
     );
   }
@@ -104,10 +146,10 @@ const DataCard = ({
           ) : statusSummary ? (
             <>
               <div className="rounded-lg border border-[#B7E4C7] bg-[#E8F7EA] px-3 py-1 text-[11px] font-semibold text-[#17803D]">
-                ACTIVE : {statusSummary.active ?? 0}
+                {(statusLabels?.active ?? "Active").toUpperCase()} : {statusSummary.active ?? 0}
               </div>
               <div className="rounded-lg border border-[#F5B7A7] bg-[#FDEBE6] px-3 py-1 text-[11px] font-semibold text-[#E05A33]">
-                INACTIVE : {statusSummary.inactive ?? 0}
+                {(statusLabels?.inactive ?? "Inactive").toUpperCase()} : {statusSummary.inactive ?? 0}
               </div>
             </>
           ) : (

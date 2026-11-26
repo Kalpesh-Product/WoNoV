@@ -13,7 +13,9 @@ const VisitorDetails = () => {
     const queryClient = useQueryClient();
     const { clientName } = useParams();
     const location = useLocation();
-    const isOpenDeskView = location.pathname.includes("/open-desk/");
+    const isOpenDeskView =
+        location.pathname.includes("/open-desk/") ||
+        location.pathname.includes("/clients/day-pass/");
     const [isEditing, setIsEditing] = useState(false);
 
     const { control, handleSubmit, reset } = useForm({
@@ -59,7 +61,9 @@ const VisitorDetails = () => {
         const purposeMatchesView = (v) => {
             const purpose = (v.purposeOfVisit || "").trim().toLowerCase();
             if (isOpenDeskView) {
-                return purpose === "half-day pass" || purpose === "full-day pass";
+                return (
+                    purpose.includes("day pass") || purpose.includes("day-pass")
+                );
             }
 
             return purpose === "meeting room booking";

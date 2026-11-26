@@ -514,6 +514,7 @@ import ViewClientInfo from "../pages/Dashboard/SalesDashboard/ViewClientInfo";
 import CoWorkingClients from "../pages/Dashboard/SalesDashboard/ViewClients/CoWorkingClients";
 import CoworkingClientHistory from "../pages/Dashboard/SalesDashboard/ViewClients/CoworkingClientHistory";
 import WorkationClients from "../pages/Dashboard/SalesDashboard/ViewClients/WorkationClients";
+import AlternateClients from "../pages/Dashboard/SalesDashboard/ViewClients/AlternateClients";
 import VirtualOfficeClients from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClients";
 import VirtualOfficeClientDetails from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClientDetails";
 import VirtualOfficeClientHistory from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClientHistory";
@@ -4744,7 +4745,79 @@ export const routes = createBrowserRouter([
                       },
                       {
                         path: "mix-bag/clients/workation",
-                        element: <WorkationClients />,
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SALES_WORKATION_CLIENTS.value,
+                            ]}
+                          >
+                            <WorkationClients />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "mix-bag/clients/alternate",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SALES_ALTERNATE_CLIENTS.value,
+                            ]}
+                          >
+                            <AlternateClients />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "mix-bag/clients/day-pass",
+                        element: <ExternalClientCompanies />,
+                      },
+                      {
+                        path: "mix-bag/clients/external-meeting",
+                        element: <ExternalClientCompanies />,
+                      },
+                      {
+                        path: "mix-bag/clients/external-meeting/:clientName",
+                        element: <ExternalClientLayout />,
+                        children: [
+                          {
+                            path: "client-details",
+                            element: <VisitorDetails />,
+                          },
+                          {
+                            path: "meetings",
+                            element: <ExternalCompanyMeetings />,
+                          },
+                          {
+                            path: "revenue",
+                            element: <ExternalClientRevenue />,
+                          },
+                          {
+                            path: "members",
+                            element: <ExternalClientMembers />,
+                          },
+                        ],
+                      },
+                      {
+                        path: "mix-bag/clients/day-pass/:clientName",
+                        element: <ExternalClientLayout />,
+                        children: [
+                          {
+                            path: "client-details",
+                            element: <VisitorDetails />,
+                          },
+                          {
+                            path: "meetings",
+                            element: <ExternalCompanyMeetings />,
+                          },
+                          {
+                            path: "revenue",
+                            element: <OpenDeskRevenue />,
+                          },
+                          {
+                            path: "members",
+                            element: <ExternalClientMembers />,
+                          },
+                        ],
                       },
                       {
                         path: "mix-bag/clients/virtual-office",
@@ -4863,13 +4936,18 @@ export const routes = createBrowserRouter([
                       },
                       {
                         path: "mix-bag/external-client/meetings/external-companies",
-                        element: <ExternalClientCompanies />,
+                        element: (
+                          <Navigate
+                            to="/app/dashboard/sales-dashboard/mix-bag/clients/external-meeting"
+                            replace
+                          />
+                        ),
                       },
                       {
                         path: "mix-bag/external-client/meetings",
                         element: (
                           <Navigate
-                            to="/app/dashboard/sales-dashboard/mix-bag/external-client/meetings/external-companies"
+                            to="/app/dashboard/sales-dashboard/mix-bag/clients/external-meeting"
                             replace
                           />
                         ),

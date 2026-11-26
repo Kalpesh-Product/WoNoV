@@ -17,12 +17,15 @@ import TabLayout from "../../../components/Tabs/TabLayout";
 import DataCard from "../../../components/DataCard";
 import { PERMISSIONS } from "../../../constants/permissions";
 import useUserPermissions from "../../../hooks/useUserPermissions";
+import { fetchExternalMeetingClients } from "../../../utils/isMeetingVisit";
 import {
   MdOutlineBusinessCenter,
   MdOutlineChair,
   MdOutlineCorporateFare,
   MdOutlineGroups,
   MdOutlineConfirmationNumber,
+  MdOutlineFlightTakeoff,
+  MdOutlineAltRoute,
 } from "react-icons/md";
 
 const CLIENT_CARD_ACCENT_COLOR = "#1E3D73";
@@ -92,6 +95,30 @@ const ViewClients = () => {
     },
   });
 
+  const { data: workationClients = [], isPending: workationPending } = useQuery({
+    queryKey: ["view-clients-workation"],
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/get-workation-clients");
+      return Array.isArray(response.data) ? response.data : [];
+    },
+  });
+
+  const { data: alternateClients = [], isPending: alternatePending } = useQuery({
+    queryKey: ["view-clients-alternate"],
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/get-alternate-clients");
+      return Array.isArray(response.data) ? response.data : [];
+    },
+  });
+
+  const {
+    data: externalMeetingClients = [],
+    isPending: externalMeetingsPending,
+  } = useQuery({
+    queryKey: ["external-meeting-clients", "existing-apis-v5"],
+    queryFn: () => fetchExternalMeetingClients(axios),
+  });
+
   const unifiedClients = useMemo(() => {
     if (!data || typeof data !== "object") return [];
 
@@ -110,10 +137,7 @@ const ViewClients = () => {
   const isOpenDeskVisitor = (visitor) => {
     const purpose = (visitor?.purposeOfVisit || "").trim().toLowerCase();
     const isDayPass =
-      purpose === "half-day pass" ||
-      purpose === "full-day pass" ||
-      purpose === "half day pass" ||
-      purpose === "full day pass";
+      purpose.includes("day pass") || purpose.includes("day-pass");
 
     return isDayPass || Boolean(visitor?.convertedFromInternal);
   };
@@ -169,22 +193,16 @@ const ViewClients = () => {
     };
   }, [virtualOfficeClients]);
 
-  const externalMeetingVisitors = useMemo(
-    () =>
-      externalVisitors.filter((visitor) => {
-        const purpose = (visitor.purposeOfVisit || "").trim().toLowerCase();
-        return purpose === "meeting room booking";
-      }),
-    [externalVisitors]
-  );
-
   const externalMeetingStatusSummary = useMemo(() => {
-    const active = externalMeetingVisitors.filter((visitor) => visitor?.isActive).length;
+    const paid = externalMeetingClients.filter(
+      (client) => client?.paymentStatus === true,
+    ).length;
+
     return {
-      active,
-      inactive: Math.max(0, externalMeetingVisitors.length - active),
+      active: paid,
+      inactive: Math.max(0, externalMeetingClients.length - paid),
     };
-  }, [externalMeetingVisitors]);
+  }, [externalMeetingClients]);
 
   const openDeskVisitors = useMemo(
     () => externalVisitors.filter((visitor) => isOpenDeskVisitor(visitor)),
@@ -192,19 +210,43 @@ const ViewClients = () => {
   );
 
   const openDeskStatusSummary = useMemo(() => {
-    const active = openDeskVisitors.filter((visitor) => visitor?.isActive).length;
+    const paid = openDeskVisitors.filter(
+      (visitor) => visitor?.paymentStatus === true
+    ).length;
     return {
-      active,
-      inactive: Math.max(0, openDeskVisitors.length - active),
+      active: paid,
+      inactive: Math.max(0, openDeskVisitors.length - paid),
     };
   }, [openDeskVisitors]);
+
+  const workationStatusSummary = useMemo(() => {
+    const active = workationClients.filter(
+      (client) => client?.isActive !== false,
+    ).length;
+    return {
+      active,
+      inactive: Math.max(0, workationClients.length - active),
+    };
+  }, [workationClients]);
+
+  const alternateStatusSummary = useMemo(() => {
+    const active = alternateClients.filter(
+      (client) => client?.isActive !== false,
+    ).length;
+    return {
+      active,
+      inactive: Math.max(0, alternateClients.length - active),
+    };
+  }, [alternateClients]);
 
   const clientCounts = {
     coWorking: annualClients.length,
     flexibleDesk: flexibleDeskClients.length,
     virtualOfficeClients: virtualOfficeClients.length,
-    externalMeetings: externalMeetingVisitors.length,
+    externalMeetings: externalMeetingClients.length,
     openDesk: openDeskVisitors.length,
+    workation: workationClients.length,
+    alternate: alternateClients.length,
   };
 
   const verticalsData = [
@@ -247,20 +289,42 @@ const ViewClients = () => {
       name: "External Meetings",
       value: clientCounts.externalMeetings,
       statusSummary: externalMeetingStatusSummary,
-      route: "/app/dashboard/sales-dashboard/mix-bag/external-client/meetings/external-companies",
+      statusLabels: { active: "Paid", inactive: "Unpaid" },
+      route: "/app/dashboard/sales-dashboard/mix-bag/clients/external-meeting",
       accentColor: CLIENT_CARD_ACCENT_COLOR,
       icon: <MdOutlineGroups size={18} />,
       // permission: PERMISSIONS.SALES_EXTERNAL_CLIENT_MEETINGS_COMPANIES.value,
     },
     {
       id: 5,
-      name: "Day Pass",
+      name: "Day Pass Client",
       value: clientCounts.openDesk,
       statusSummary: openDeskStatusSummary,
-      route: "/app/dashboard/sales-dashboard/mix-bag/external-client/open-desk/external-companies",
+      statusLabels: { active: "Paid", inactive: "Unpaid" },
+      route: "/app/dashboard/sales-dashboard/mix-bag/clients/day-pass",
       accentColor: CLIENT_CARD_ACCENT_COLOR,
       icon: <MdOutlineConfirmationNumber size={18} />,
       // permission: PERMISSIONS.SALES_EXTERNAL_CLIENT_OPEN_DESK_COMPANIES.value,
+    },
+    {
+      id: 6,
+      name: "Workation",
+      value: clientCounts.workation,
+      statusSummary: workationStatusSummary,
+      route: "/app/dashboard/sales-dashboard/mix-bag/clients/workation",
+      permission: PERMISSIONS.SALES_WORKATION_CLIENTS.value,
+      accentColor: CLIENT_CARD_ACCENT_COLOR,
+      icon: <MdOutlineFlightTakeoff size={18} />,
+    },
+    {
+      id: 7,
+      name: "Alternate",
+      value: clientCounts.alternate,
+      statusSummary: alternateStatusSummary,
+      route: "/app/dashboard/sales-dashboard/mix-bag/clients/alternate",
+      permission: PERMISSIONS.SALES_ALTERNATE_CLIENTS.value,
+      accentColor: CLIENT_CARD_ACCENT_COLOR,
+      icon: <MdOutlineAltRoute size={18} />,
     },
   ].filter(
     (card) => !card.permission || hasPermission(card.permission),
@@ -282,8 +346,9 @@ const ViewClients = () => {
       flexibleDesk: "Flexible Desk",
       virtualOffice: "Virtualoffice",
       externalMeeting: "External Meetings",
-      openDesk: "Day Pass Client",
-      workation: "Workations",
+      openDesk: "Day Pass",
+      workation: "Workation",
+      alternate: "Alternate",
       coliving: "Co-Living",
     };
 
@@ -381,10 +446,27 @@ const ViewClients = () => {
     }));
   };
 
-  const transformedData = transformClientsGroupedByMonth(unifiedClients);
+  const chartClients = [
+    ...unifiedClients,
+    ...workationClients.map((client) => ({
+      ...client,
+      clientType: "workation",
+    })),
+    ...alternateClients.map((client) => ({
+      ...client,
+      clientType: "alternate",
+    })),
+  ];
+  const transformedData = transformClientsGroupedByMonth(chartClients);
   console.log("transformed data ", transformedData);
 
-  if (clientsPending || coworkingPending) {
+  if (
+    clientsPending ||
+    coworkingPending ||
+    workationPending ||
+    alternatePending ||
+    externalMeetingsPending
+  ) {
     return <SalesDashboardPageSkeleton chartTitle="OVERALL CLIENTS" />;
   }
 
@@ -394,8 +476,11 @@ const ViewClients = () => {
         <UniqueClients
           data={transformedData}
           hideAccordion
-          additionalData={`CLIENTS : ${unifiedClients.length}`}
+          additionalData={`CLIENTS : ${chartClients.length}`}
           includeFlexibleDeskSeries
+          rankStacksByValue
+          titleAmountChip
+          titleAmount={({ count }) => `CLIENT : ${count}`}
         >
           <div className="border-b border-borderGray px-4 pb-4">
             <h2 className="text-mobileTitle lg:text-widgetTitle text-primary font-pmedium uppercase">
@@ -410,6 +495,7 @@ const ViewClients = () => {
                   data={item.value}
                   title={item.name}
                   statusSummary={item.statusSummary}
+                  statusLabels={item.statusLabels}
                   route={item.route}
                   variant="client-summary"
                   accentColor={item.accentColor}

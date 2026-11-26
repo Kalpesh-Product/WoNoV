@@ -945,6 +945,7 @@ const fetchVisitorReportService = async ({
       ![
         "repeat-external-companies",
         "external-meeting-booking",
+        "external-open-desk-clients",
         "visitor-company-dropdown",
       ].includes(searchContext)
     ) {

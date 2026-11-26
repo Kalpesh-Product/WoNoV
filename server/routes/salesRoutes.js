@@ -37,6 +37,9 @@ const {
 const {
   bulkInsertWorkationClients,
   getWorkationClients,
+  createWorkationClient,
+  updateWorkationClient,
+  updateWorkationClientStatus,
 } = require("../controllers/salesControllers/workationControllers");
 const {
   createClientService,
@@ -65,7 +68,6 @@ const {
 const {
   getConsolidatedClients,
 } = require("../controllers/salesControllers/consolidatedClients");
-
 const {
   addRevenue,
   getRevenues,
@@ -90,6 +92,10 @@ const {
   getAlternateRevenues,
   bulkInsertAlternateRevenue,
   updateAlternateRevenueInvoice,
+  getAlternateClients,
+  createAlternateClient,
+  updateAlternateClient,
+  updateAlternateClientStatus,
 } = require("../controllers/salesControllers/alternateRevenuesControllers");
 
 const {
@@ -225,6 +231,10 @@ router.post(
 );
 
 router.get("/get-alternate-revenue", getAlternateRevenues);
+router.get("/get-alternate-clients", getAlternateClients);
+router.post("/alternate-clients", createAlternateClient);
+router.patch("/alternate-clients/:id", updateAlternateClient);
+router.patch("/alternate-clients/:id/status", updateAlternateClientStatus);
 router.patch(
   "/alternate-revenue-invoice",
   upload.single("client-invoice"),
@@ -269,6 +279,9 @@ router.post(
   bulkInsertWorkationClients,
 );
 router.get("/get-workation-clients", getWorkationClients);
+router.post("/workation-clients", createWorkationClient);
+router.patch("/workation-clients/:id", updateWorkationClient);
+router.patch("/workation-clients/:id/status", updateWorkationClientStatus);
 router.post("/create-workation-revenue", createWorkationRevenue);
 router.get("/consolidated-revenue", getConsolidatedRevenue);
 router.get("/simple-consolidated-revenue", getSimpleConsolidatedRevenue);

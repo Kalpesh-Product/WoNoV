@@ -144,11 +144,14 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
   const clientOptions = useMemo(
     () =>
       workationClients
-        .filter((client) => client?.clientName)
+        .filter(
+          (client) => client?.clientName && client?.isActive !== false,
+        )
         .map((client) => ({
           value: client._id ? String(client._id) : `name:${client.clientName}`,
           label: client.clientName,
           clientId: client._id ? String(client._id) : "",
+          particulars: client.particulars || "",
         })),
     [workationClients],
   );
@@ -733,6 +736,7 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
 
                     if (!value) {
                       setValue("nameOfClient", "", { shouldDirty: true });
+                      setValue("particulars", "", { shouldDirty: true });
                       return;
                     }
 
@@ -742,6 +746,9 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
 
                     if (selectedOption) {
                       setValue("nameOfClient", selectedOption.label, {
+                        shouldDirty: true,
+                      });
+                      setValue("particulars", selectedOption.particulars, {
                         shouldDirty: true,
                       });
                     }
