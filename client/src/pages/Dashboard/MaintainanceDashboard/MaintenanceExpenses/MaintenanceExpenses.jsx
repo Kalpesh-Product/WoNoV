@@ -29,6 +29,7 @@ import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { transformBudgetData } from "../../../../utils/transformBudgetData";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import { toast } from "sonner";
+import SalesDashboardChartSkeleton from "../../SalesDashboard/SalesDashboardChartSkeleton";
 
 const getFiscalYearStart = (date = dayjs()) => {
   const parsedDate = dayjs(date);
@@ -272,21 +273,12 @@ const MaintenanceExpenses = () => {
 
   // BUDGET NEW START
 
-  const [isReady, setIsReady] = useState(false);
-
   // const [openModal, setOpenModal] = useState(false);
 
   const budgetBar = useMemo(() => {
     if (isHrLoading || !Array.isArray(hrFinance)) return null;
     return transformBudgetData(hrFinance);
   }, [isHrLoading, hrFinance]);
-
-  useEffect(() => {
-    if (!isHrLoading) {
-      const timer = setTimeout(() => setIsReady(true), 1000);
-      return () => clearTimeout(timer); // Cleanup on unmount
-    }
-  }, [isHrLoading]);
 
   const expenseRawSeries = useMemo(() => {
     // Initialize monthly buckets
@@ -979,7 +971,7 @@ const stackedExpenseOptions = {
         onYearChange={setSelectedFiscalYear}
       /> */}
 
-      <YearlyGraph
+      {isHrLoading ? <WidgetSection border title={`BIZ Nest ${department?.name?.toUpperCase()} DEPARTMENT EXPENSE`}><SalesDashboardChartSkeleton title="Maintenance Expenses" /></WidgetSection> : <YearlyGraph
   data={stackedExpenseRawSeries}
   options={stackedExpenseOptions}
   title={`BIZ Nest ${department?.name?.toUpperCase()} DEPARTMENT EXPENSE`}
@@ -994,7 +986,7 @@ const stackedExpenseOptions = {
   summaryChipVariant="budget"
   currentYear={currentFiscalYear}
   onYearChange={setSelectedFiscalYear}
-/>
+/>}
 
       {/* {!isTop && (
         <div className="flex justify-end">
@@ -1007,7 +999,7 @@ const stackedExpenseOptions = {
         </div>
       )} */}
 
-      <AllocatedBudget financialData={financialData} exportData />
+      <AllocatedBudget financialData={financialData} exportData isLoading={isHrLoading} />
       <MuiModal
         title="Request Budget"
         open={openModal}

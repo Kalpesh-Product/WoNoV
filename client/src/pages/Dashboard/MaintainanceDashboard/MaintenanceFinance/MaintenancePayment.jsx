@@ -6,7 +6,6 @@ import interactionPlugin from "@fullcalendar/interaction";
 
 import {
   Checkbox,
-  CircularProgress,
   FormControlLabel,
   FormGroup,
 } from "@mui/material";

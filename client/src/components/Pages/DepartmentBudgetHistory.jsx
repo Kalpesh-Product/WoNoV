@@ -158,7 +158,7 @@ const DepartmentBudgetHistory = () => {
         search
         tableTitle={`${departmentTitle} Budget History`}
         tableHeight={450}
-        isLoading={isBudgetLoading}
+        loading={isBudgetLoading}
         exportData
       />
       {viewDetails && (

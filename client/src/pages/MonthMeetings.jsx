@@ -291,7 +291,12 @@ const MonthMeetings = () => {
       clientCompanyName: getCompanyDisplayName(meeting, "BIZ Nest"),
       durationDisplay: getDisplayDuration(meeting),
       companyDisplay: getCompanyDisplayName(meeting),
-      bookedByDisplay: getPersonDisplayName(meeting.bookedBy),
+      bookedByDisplay:
+        getPersonDisplayName(
+          meeting.bookedBy ||
+            meeting.externalBookedBy ||
+            meeting.clientBookedBy,
+        ) || "N/A",
       receptionistDisplay: getPersonDisplayName(meeting.receptionist),
       departmentDisplay: getDepartmentDisplayName(meeting.department),
       locationDisplay:
@@ -375,7 +380,13 @@ const MonthMeetings = () => {
             />
             <DetalisFormatted
               title="Booked By"
-              detail={getPersonDisplayName(selectedMeeting.bookedBy)}
+              detail={
+                getPersonDisplayName(
+                  selectedMeeting.bookedBy ||
+                    selectedMeeting.externalBookedBy ||
+                    selectedMeeting.clientBookedBy,
+                ) || "N/A"
+              }
             />
             <DetalisFormatted
               title="Receptionist"

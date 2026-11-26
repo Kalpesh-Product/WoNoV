@@ -2,8 +2,8 @@ import { Skeleton } from "@mui/material";
 
 const barHeights = [140, 205, 175, 245, 160, 220, 185, 235, 150, 200, 170, 215];
 
-const SalesDashboardChartSkeleton = ({ circular = false, title = "chart" }) => (
-  <div className="flex h-[300px] w-full min-w-0 items-center justify-center px-4 py-5" role="status" aria-label={`Loading ${title}`}>
+const SalesDashboardChartSkeleton = ({ circular = false, title = "chart", height = 300 }) => (
+  <div className="flex w-full min-w-0 items-center justify-center px-4 py-5" style={{ height }} role="status" aria-label={`Loading ${title}`}>
     {circular ? (
       <Skeleton variant="circular" width={200} height={200} />
     ) : (

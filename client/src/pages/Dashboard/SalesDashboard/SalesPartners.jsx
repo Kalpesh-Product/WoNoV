@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { MenuItem, Popover, Tab, Tabs, TextField } from "@mui/material";
+import { MenuItem, Tab, Tabs, TextField } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { toast } from "sonner";
@@ -12,8 +12,9 @@ import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useSearchParams } from "react-router-dom";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
-import { MdCalendarToday, MdHistory } from "react-icons/md";
-import { DateRangePicker } from "react-date-range";
+import { MdHistory } from "react-icons/md";
+import SalesEditHistory from "./SalesEditHistory";
+import { isLinkedInProfileUrl } from "../../../utils/validators";
 
 const submissionTabs = [
   { kind: "partnership", label: "Partnership" },
@@ -113,22 +114,9 @@ const normalizePhone = (value) => {
   if (digits.length === 12 && digits.startsWith("91")) return digits.slice(2);
   return digits;
 };
-const isLinkedInProfileUrl = (value) => {
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:"
-      && ["linkedin.com", "www.linkedin.com"].includes(url.hostname.toLowerCase())
-      && /^\/(?:in|company)\/[^/\s]+\/?$/.test(url.pathname);
-  } catch {
-    return false;
-  }
-};
-
 const validatePartnerForm = (form, kind, existingRows, editingRow = null) => {
   const errors = {};
-  if (editingRow && isWebsiteRow(editingRow)) {
-    if (!form.status.trim()) errors.status = "Status is required.";
-  } else if (editingRow && !PARTNERSHIP_STATUSES.includes(form.status)) {
+  if (editingRow && !PARTNERSHIP_STATUSES.includes(form.status)) {
     errors.status = "Select a status.";
   }
   if (kind !== "subscription" && !form.name.trim()) errors.name = "Name is required.";
@@ -162,6 +150,11 @@ const validatePartnerForm = (form, kind, existingRows, editingRow = null) => {
     normalizePhone(row.phone || row.mobile) === phone)) {
     errors[phoneField] = "This phone number already has an enquiry in this tab.";
   }
+  if (isWebsiteRow(editingRow)) {
+    return Object.fromEntries(Object.entries(errors).filter(([field]) =>
+      String(form[field] ?? "").trim() !== String(editingRow[field] ?? "").trim(),
+    ));
+  }
   return errors;
 };
 
@@ -177,8 +170,6 @@ const SalesPartners = () => {
   const [formErrors, setFormErrors] = useState({});
   const [editingRow, setEditingRow] = useState(null);
   const [historyRow, setHistoryRow] = useState(null);
-  const [historyDateRange, setHistoryDateRange] = useState(null);
-  const [historyCalendarAnchor, setHistoryCalendarAnchor] = useState(null);
 
   const { data: localPartners = [], isPending: localPending } = useQuery({
     queryKey: ["salesPartnersLocal", selectedKind],
@@ -211,26 +202,13 @@ const SalesPartners = () => {
   const { data: editHistory = [], isPending: historyPending, isError: historyError } = useQuery({
     queryKey: ["enquiryEditHistory", historySource, historyRow?.id],
     queryFn: async () => (await axios.get(`/api/sales/partnership/history/${historySource}/${historyRow.id}`, {
-      params: historySource === "website" ? { kind: historyRow.source || selectedKind } : undefined,
+      params: historySource === "website" ? { kind: historyRow.kind || historyRow.source || selectedKind } : undefined,
     })).data,
     enabled: Boolean(historyRow),
     retry: false,
   });
-  const fullHistoryRange = editHistory.length ? {
-    startDate: new Date(Math.min(...editHistory.map((entry) => new Date(entry.editedAt).getTime()))),
-    endDate: new Date(Math.max(...editHistory.map((entry) => new Date(entry.editedAt).getTime()))),
-    key: "selection",
-  } : { startDate: new Date(), endDate: new Date(), key: "selection" };
-  const activeHistoryRange = historyDateRange || fullHistoryRange;
-  const visibleHistory = editHistory.filter((entry) => {
-    const date = dayjs(entry.editedAt);
-    return !date.isBefore(dayjs(activeHistoryRange.startDate), "day")
-      && !date.isAfter(dayjs(activeHistoryRange.endDate), "day");
-  }).flatMap((entry) => (entry.changes || []).map((change) => ({ ...entry, change })));
   const closeHistory = () => {
     setHistoryRow(null);
-    setHistoryDateRange(null);
-    setHistoryCalendarAnchor(null);
   };
 
   const savePartner = useMutation({
@@ -329,9 +307,7 @@ const SalesPartners = () => {
       subject: row.subject || "", startupName: row.startupName || "", websiteUrl: row.websiteUrl || "",
       linkedinProfileUrl: row.linkedinProfileUrl || "", message: row.message || "",
       presentation: row.presentation?.url ? { ...row.presentation, name: row.presentation.filename } : null,
-      status: isWebsiteRow(row)
-        ? row.status || ""
-        : (PARTNERSHIP_STATUSES.includes(row.status) ? row.status : ""),
+      status: PARTNERSHIP_STATUSES.includes(row.status) ? row.status : "",
     });
     setFormErrors({});
     setFormOpen(true);
@@ -442,9 +418,9 @@ const SalesPartners = () => {
           ? ["name", "email", "phone", "subject", "message"]
           : ["email"];
     if (isWebsiteRow(editingRow)) {
-      const source = String(editingRow.source || selectedKind).toLowerCase();
+      const kind = String(editingRow.kind || editingRow.source || selectedKind).toLowerCase();
       const changes = Object.fromEntries(
-        (WEBSITE_EDIT_FIELDS[source] || [])
+        (WEBSITE_EDIT_FIELDS[kind] || [])
           .filter((field) => field in form
             && String(form[field] ?? "").trim() !== String(editingRow[field] ?? "").trim())
           .map((field) => [field, String(form[field] ?? "").trim()]),
@@ -454,10 +430,10 @@ const SalesPartners = () => {
         setEditingRow(null);
         return;
       }
-      if (source === "partnership") {
+      if (kind === "partnership") {
         editWebsitePartner.mutate({ id: editingRow.id, changes });
       } else {
-        editWebsiteSubmission.mutate({ kind: source, id: editingRow.id, changes });
+        editWebsiteSubmission.mutate({ kind, id: editingRow.id, changes });
       }
       return;
     }
@@ -552,7 +528,7 @@ const SalesPartners = () => {
           {selectedKind === "startup" && <>
             <TextField label="Website URL" value={form.websiteUrl} onChange={updateField("websiteUrl")} size="small" error={Boolean(formErrors.websiteUrl)} helperText={formErrors.websiteUrl} />
             <TextField label="LinkedIn Profile URL" value={form.linkedinProfileUrl} onChange={updateField("linkedinProfileUrl")} size="small" error={Boolean(formErrors.linkedinProfileUrl)} helperText={formErrors.linkedinProfileUrl} />
-            <div>
+            {!isWebsiteRow(editingRow) && <div>
               <UploadMultipleFilesInput
                 id="startup-presentation"
                 label="Upload Files"
@@ -570,17 +546,15 @@ const SalesPartners = () => {
                 showClearAll={false}
                 helperText={formErrors.presentation || "Maximum 1 file, 10 MB. PDF or PowerPoint."}
               />
-            </div>
+            </div>}
           </>}
           {selectedKind !== "subscription" && <TextField label="Message" value={form.message} onChange={updateField("message")} multiline minRows={3} required size="small" error={Boolean(formErrors.message)} helperText={formErrors.message || `${form.message.length}/${MESSAGE_LIMIT} characters`} slotProps={{ htmlInput: { maxLength: MESSAGE_LIMIT } }} />}
-          {editingRow && (isWebsiteRow(editingRow) ? (
-            <TextField label="Status" value={form.status} onChange={updateField("status")} required size="small" error={Boolean(formErrors.status)} helperText={formErrors.status || "Use the status value accepted by the website API."} />
-          ) : (
+          {editingRow && (
             <TextField select label="Status" value={form.status} onChange={updateField("status")} required size="small" error={Boolean(formErrors.status)} helperText={formErrors.status}>
               <MenuItem value="" disabled>Select status</MenuItem>
               {PARTNERSHIP_STATUSES.map((status) => <MenuItem key={status} value={status}>{status}</MenuItem>)}
             </TextField>
-          ))}
+          )}
           <div className="flex justify-end gap-3">
             <PrimaryButton title="Cancel" type="button" handleSubmit={() => { setFormOpen(false); setEditingRow(null); }} />
             <PrimaryButton title={editingRow ? "Save Changes" : `Add ${selectedLabel}`} type="submit" isLoading={savePartner.isPending || editPartner.isPending || editWebsitePartner.isPending || editWebsiteSubmission.isPending} />
@@ -602,52 +576,13 @@ const SalesPartners = () => {
         </div>
       </MuiModal>
 
-      <MuiModal open={Boolean(historyRow)} onClose={closeHistory} title={`${selectedLabel} Edit History`} widthClass="w-[calc(100vw-2rem)] max-w-[960px]">
-        <div className="mb-4 flex flex-wrap items-center justify-center gap-2">
-          <div className="min-w-40 rounded-md border border-primary px-6 py-2 text-center text-content text-gray-600">
-            {dayjs(activeHistoryRange.startDate).format("DD MMM YYYY")}
-          </div>
-          <div className="min-w-40 rounded-md border border-primary px-6 py-2 text-center text-content text-gray-600">
-            {dayjs(activeHistoryRange.endDate).format("DD MMM YYYY")}
-          </div>
-          <button type="button" aria-label="Select edit history date range" className="rounded-md bg-primary p-3 text-white" onClick={(event) => setHistoryCalendarAnchor(event.currentTarget)}>
-            <MdCalendarToday size={20} />
-          </button>
-        </div>
-        <Popover open={Boolean(historyCalendarAnchor)} anchorEl={historyCalendarAnchor} onClose={() => setHistoryCalendarAnchor(null)} anchorOrigin={{ vertical: "bottom", horizontal: "center" }} transformOrigin={{ vertical: "top", horizontal: "center" }}>
-          <DateRangePicker ranges={[activeHistoryRange]} onChange={({ selection }) => setHistoryDateRange(selection)} moveRangeOnFirstSelection={false} direction="vertical" />
-        </Popover>
-        <div className="max-h-[65vh] overflow-auto rounded-md border border-borderGray">
-          <table className="w-full min-w-[760px] border-collapse text-left text-sm">
-            <thead className="sticky top-0 bg-gray-50 text-primary">
-              <tr>
-                <th className="border-b px-4 py-3">Sr No</th>
-                <th className="border-b px-4 py-3">Edited On</th>
-                <th className="border-b px-4 py-3">Edited By</th>
-                <th className="border-b px-4 py-3">Field</th>
-                <th className="border-b px-4 py-3">Previous Value</th>
-                <th className="border-b px-4 py-3">New Value</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibleHistory.length ? visibleHistory.map((entry, index) => (
-                <tr key={`${entry._id || entry.editedAt}-${entry.change.field}-${index}`}>
-                  <td className="border-b px-4 py-3 align-top">{index + 1}</td>
-                  <td className="whitespace-nowrap border-b px-4 py-3 align-top">{dayjs(entry.editedAt).format("DD-MM-YYYY, hh:mm A")}</td>
-                  <td className="border-b px-4 py-3 align-top">{[entry.editedBy?.firstName, entry.editedBy?.middleName, entry.editedBy?.lastName].filter(Boolean).join(" ") || "—"}</td>
-                  <td className="border-b px-4 py-3 align-top font-medium">{entry.change.label}</td>
-                  <td className="whitespace-pre-wrap break-words border-b px-4 py-3 align-top">{entry.change.oldValue || "—"}</td>
-                  <td className="whitespace-pre-wrap break-words border-b px-4 py-3 align-top">{entry.change.newValue || "—"}</td>
-                </tr>
-              )) : (
-                <tr><td colSpan={6} className="px-4 py-10 text-center text-borderGray">
-                  {historyPending ? "Loading edit history..." : historyError ? "Could not load edit history" : editHistory.length ? "No edit history found for the selected dates" : "No edit history available"}
-                </td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </MuiModal>
+      {historyRow && <SalesEditHistory
+        title={`${selectedLabel} Edit History`}
+        editHistory={editHistory}
+        historyPending={historyPending}
+        historyError={historyError}
+        onClose={closeHistory}
+      />}
     </div>
   );
 };

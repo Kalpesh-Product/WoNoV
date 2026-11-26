@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
+import { LEAD_STATUSES } from "./leadStatuses";
 import { setLeadsData } from "../../../redux/slices/salesSlice";
 import {
   isAlphanumeric,
@@ -292,11 +293,6 @@ const ViewClientInfo = () => {
 
   const handleEditToggle = () => setIsEditing(!isEditing);
 
-  const leadStatusOptions = useMemo(
-    () => ["Cold", "Mild", "Hot", "Closed"],
-    [],
-  );
-
   const serviceCategoryOptions = useMemo(
     () =>
       services.map((service) => ({
@@ -345,7 +341,7 @@ const ViewClientInfo = () => {
       name: "leadStatus",
       label: "Lead Status",
       type: "select",
-      options: leadStatusOptions,
+      options: LEAD_STATUSES,
       rules: { required: "Lead Status is required" },
     },
     {

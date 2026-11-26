@@ -34,3 +34,14 @@ export const isValidIFSC = (value) =>
 export const isValidBankAccount = (value) =>
   /^\d{9,18}$/.test(value) ||
   "Enter a valid bank account number (9–18 digits). Example: 123456789012";
+
+export const isLinkedInProfileUrl = (value) => {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:"
+      && ["linkedin.com", "www.linkedin.com"].includes(url.hostname.toLowerCase())
+      && /^\/(?:in|company)\/[^/\s]+\/?$/.test(url.pathname);
+  } catch {
+    return false;
+  }
+};

@@ -6,11 +6,12 @@ import interactionPlugin from "@fullcalendar/interaction";
 
 import {
   Checkbox,
-  CircularProgress,
+  Skeleton,
   FormControlLabel,
   FormGroup,
 } from "@mui/material";
 import dayjs from "dayjs";
+import CalendarLoadingSkeleton from "../CalendarLoadingSkeleton";
 
 import MuiModal from "../MuiModal";
 import { useQuery } from "@tanstack/react-query";
@@ -102,6 +103,20 @@ const PaymentScheduleCommon = () => {
     setIsDrawerOpen(true);
   };
   console.log("selected event : ", selectedEvent);
+
+  if (isHrLoading) {
+    return (
+      <div className="flex min-w-0 gap-4 bg-white p-4" role="status" aria-label="Loading payment schedule">
+        <div className="flex w-1/4 flex-col gap-4">
+          <Skeleton variant="rectangular" height={125} className="rounded-md" />
+          <Skeleton variant="rectangular" height={225} className="rounded-md" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <CalendarLoadingSkeleton label="payment schedule" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col  bg-white">

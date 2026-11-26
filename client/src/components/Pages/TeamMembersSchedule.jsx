@@ -3,7 +3,7 @@ import AgTable from "../../components/AgTable";
 import PrimaryButton from "../../components/PrimaryButton";
 import MuiModal from "../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
-import { CircularProgress, MenuItem, TextField } from "@mui/material";
+import { MenuItem, TextField } from "@mui/material";
 import { toast } from "sonner";
 import useAuth from "../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -17,6 +17,7 @@ import humanDate from "../../utils/humanDateForamt";
 import { queryClient } from "../../main";
 import PageFrame from "../../components/Pages/PageFrame";
 import usePageDepartment from "../../hooks/usePageDepartment";
+import AdminLoadingSkeleton from "../../pages/Dashboard/AdminDashboard/AdminLoadingSkeleton";
 
 const TeamMembersSchedule = () => {
   const navigate = useNavigate();
@@ -525,8 +526,8 @@ const TeamMembersSchedule = () => {
   return (
     <div className="p-4">
       <PageFrame>
-        {!isUnitAssignees ? (
-          <AgTable
+        <AgTable
+            loading={isUnitAssignees || isUnitsPending}
             // key={unitAssignees.length}
             search={true}
             tableTitle={"Weekly Rotation Schedule"}
@@ -535,11 +536,6 @@ const TeamMembersSchedule = () => {
             columns={unitColumns}
             handleClick={handleAddUser}
           />
-        ) : (
-          <div className="flex justify-center items-center h-[60vh]">
-            <CircularProgress color="#1E3D73" />
-          </div>
-        )}
       </PageFrame>
 
       <MuiModal
@@ -585,7 +581,7 @@ const TeamMembersSchedule = () => {
                             </MenuItem>
                           ))
                         ) : (
-                          <CircularProgress />
+                          <AdminLoadingSkeleton variant="option" />
                         )}
                       </TextField>
                     )}
@@ -616,7 +612,7 @@ const TeamMembersSchedule = () => {
                             </MenuItem>
                           ))
                         ) : (
-                          <CircularProgress />
+                          <AdminLoadingSkeleton variant="option" />
                         )}
                       </TextField>
                     )}
@@ -897,7 +893,7 @@ const TeamMembersSchedule = () => {
                         </MenuItem>
                       ))
                     ) : (
-                      <CircularProgress />
+                      <AdminLoadingSkeleton variant="option" />
                     )}
                   </TextField>
                 )}

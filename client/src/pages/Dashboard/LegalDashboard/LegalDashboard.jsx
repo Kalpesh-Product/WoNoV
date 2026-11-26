@@ -12,6 +12,7 @@ import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import usePageDepartment from "../../../hooks/usePageDepartment";
 import useUserPermissions from "../../../hooks/useUserPermissions";
 import { inrFormat } from "../../../utils/currencyFormat";
+import SalesDashboardChartSkeleton from "../SalesDashboard/SalesDashboardChartSkeleton";
 
 const getFiscalYearStart = (date) =>
   dayjs(date).month() >= 3 ? dayjs(date).year() : dayjs(date).year() - 1;
@@ -101,7 +102,7 @@ const [hiddenLegalExpenseSeries, setHiddenLegalExpenseSeries] = useState({
     setIsSidebarOpen(true);
   }, [setIsSidebarOpen]);
 
-  const { data: budgets = [] } = useQuery({
+  const { data: budgets = [], isPending: isBudgetLoading } = useQuery({
     queryKey: ["legal-dashboard-budget", department?._id],
     enabled: Boolean(department?._id),
     queryFn: async () => {
@@ -714,14 +715,18 @@ redrawOnParentResize: false,
     <div className="p-4">
       {hasPermission(PERMISSIONS.LEGAL_DEPARTMENT_EXPENSE.value) && (
         <div className="mb-6">
-          <YearlyGraph
-            chartId="bargraph-legal-expense"
-            data={expenseSeries}
-            options={expenseOptions}
-            title="BIZ Nest LEGAL DEPARTMENT EXPENSE"
-            titleAmount={`INR ${inrFormat(totalExpense)}`}
-            onYearChange={setSelectedFiscalYear}
-          />
+          {isBudgetLoading ? (
+            <SalesDashboardChartSkeleton title="LEGAL Department Expense" />
+          ) : (
+            <YearlyGraph
+              chartId="bargraph-legal-expense"
+              data={expenseSeries}
+              options={expenseOptions}
+              title="BIZ Nest LEGAL DEPARTMENT EXPENSE"
+              titleAmount={`INR ${inrFormat(totalExpense)}`}
+              onYearChange={setSelectedFiscalYear}
+            />
+          )}
         </div>
       )}
       {allowedCards.length > 0 && (

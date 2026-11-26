@@ -143,7 +143,7 @@ const InventoryRecordHistory = () => {
     [isOverallInventoryHistoryRoute],
   );
 
-  const { data: inventoryData = [] } = useQuery({
+  const { data: inventoryData = [], isPending: isInventoryLoading } = useQuery({
     queryKey: ["inventory-record-history", department?._id, "include-deleted"],
     enabled: Boolean(department?._id),
     queryFn: async () => {
@@ -707,6 +707,7 @@ const InventoryRecordHistory = () => {
     <>
       <PageFrame>
         <AgTable
+          loading={isInventoryLoading}
           data={historyRows}
           columns={columns}
           search={true}

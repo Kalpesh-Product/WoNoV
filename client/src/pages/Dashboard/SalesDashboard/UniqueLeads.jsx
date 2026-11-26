@@ -12,7 +12,7 @@ import WidgetSection from "../../../components/WidgetSection";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { Controller, useForm, useWatch } from "react-hook-form";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { setLeadsData } from "../../../redux/slices/salesSlice";
 import humanDate from "../../../utils/humanDateForamt";
@@ -21,12 +21,15 @@ import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import PrimaryButton from "../../../components/PrimaryButton";
 import MuiModal from "../../../components/MuiModal";
 import NormalBarGraph from "../../../components/graphs/NormalBarGraph";
-import ThreeDotMenu from "../../../components/ThreeDotMenu";
+import { HiPencilSquare } from "react-icons/hi2";
+import { LEAD_STATUSES } from "./leadStatuses";
+import SalesEditHistory from "./SalesEditHistory";
+import WebsiteLeadEditForm from "./WebsiteLeadEditForm";
 // import CollapsibleTable from "../../../components/Tables/MuiCollapsibleTable";
 // import { MdOutlineRemove, MdOutlineRemoveRedEye } from "react-icons/md";
 // import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import DetalisFormatted from "../../../components/DetalisFormatted";
-import { MdOutlineRemoveRedEye } from "react-icons/md";
+import { MdHistory, MdOutlineRemoveRedEye } from "react-icons/md";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
@@ -68,7 +71,9 @@ const WEBSITE_KIND_OPTIONS = [
   ["application", "Job applications"],
   ["product", "All product forms"],
 ];
+// BIZNest stores Book Your Subscription leads in the product collection.
 const WEBSITE_LEADS_KIND = "product";
+const EMPTY_LEADS = [];
 
 const websiteKindLabels = Object.fromEntries(WEBSITE_KIND_OPTIONS);
 const normalizeCategoryText = (value) =>
@@ -122,7 +127,9 @@ const getWebsiteCategoryLabel = (row, inquiry, selectedKind) => {
   }
 
   for (const candidate of candidates) {
-    const match = WEBSITE_CATEGORY_PATTERNS.find(([pattern]) => pattern.test(candidate));
+    const match = WEBSITE_CATEGORY_PATTERNS.find(([pattern]) =>
+      pattern.test(candidate),
+    );
     if (match) return websiteKindLabels[match[1]];
   }
 
@@ -130,19 +137,32 @@ const getWebsiteCategoryLabel = (row, inquiry, selectedKind) => {
 };
 
 const normalizeWebsiteLead = (row, index, selectedKind) => {
-  const inquiry = row.inquiries && !Array.isArray(row.inquiries)
-    ? row.inquiries
-    : row;
+  const inquiry =
+    row.inquiries && !Array.isArray(row.inquiries) ? row.inquiries : row;
   const kind = row.kind || selectedKind;
-  const productCompanyType = String(row.companyType || inquiry.companyType || row.companytype || inquiry.companytype || "").trim();
-  const productCompanySubType = String(row.companySubtype || inquiry.companySubtype || row.companySubType || inquiry.companySubType || "").trim();
-  const category = kind === "product"
-    ? productCompanyType || "Unspecified"
-    : getWebsiteCategoryLabel(row, inquiry, selectedKind);
+  const productCompanyType = String(
+    row.companyType ||
+      inquiry.companyType ||
+      row.companytype ||
+      inquiry.companytype ||
+      "",
+  ).trim();
+  const productCompanySubType = String(
+    row.companySubtype ||
+      inquiry.companySubtype ||
+      row.companySubType ||
+      inquiry.companySubType ||
+      "",
+  ).trim();
+  const category =
+    kind === "product"
+      ? productCompanyType || "Unspecified"
+      : getWebsiteCategoryLabel(row, inquiry, selectedKind);
   const name = inquiry.name || row.name || "";
 
   return {
     _id: `website:${kind}:${row.id || row._id || index}`,
+    websiteId: /^[a-f\d]{24}$/i.test(row.id || "") ? row.id : null,
     isWebsiteLead: true,
     websiteKind: kind,
     websitePage: inquiry.pagename || "",
@@ -150,20 +170,23 @@ const normalizeWebsiteLead = (row, index, selectedKind) => {
     companyType: kind === "product" ? productCompanyType : "",
     companySubType: kind === "product" ? productCompanySubType : "",
     inquiryCount: inquiry.count ?? null,
-    dateOfContact: kind === "product"
-      ? row.createdAt || null
-      : row.createdAt || inquiry.createdAt || inquiry.sdate || null,
+    dateOfContact:
+      kind === "product"
+        ? row.createdAt || null
+        : row.createdAt || inquiry.createdAt || inquiry.sdate || null,
     startDate: inquiry.sdate || null,
     companyName: inquiry.companyName || row.companyName || name,
     serviceCategory: { serviceName: category },
     pocName: name,
-    contactNumber: inquiry.mobile || row.mobile || inquiry.phone || row.phone || "",
+    contactNumber:
+      inquiry.mobile || row.mobile || inquiry.phone || row.phone || "",
     emailAddress: inquiry.email || row.email || "",
-    leadStatus: String(row.status || "Pending").toLowerCase() === "new"
-      ? "Pending"
-      : row.status || "Pending",
+    leadStatus:
+      String(row.status || "new").toLowerCase() === "new"
+        ? "Pending"
+        : row.status,
     leadSource: row.source || "Website",
-    sourceCompany: "BIZNest Website",
+    sourceCompany: "BIZ Nest Website",
     remarksComments: inquiry.message || row.message || "",
   };
 };
@@ -173,17 +196,33 @@ const matchesLeadPeriod = (lead, selectedFY, selectedMonth = "All") => {
   const leadDate = dayjs(lead?.dateOfContact);
   if (!startYear || !leadDate.isValid()) return false;
 
-  const fyStartYear = leadDate.month() >= 3 ? leadDate.year() : leadDate.year() - 1;
-  return fyStartYear === startYear &&
-    (selectedMonth === "All" || leadDate.format("MMM-YY") === selectedMonth);
+  const fyStartYear =
+    leadDate.month() >= 3 ? leadDate.year() : leadDate.year() - 1;
+  return (
+    fyStartYear === startYear &&
+    (selectedMonth === "All" || leadDate.format("MMM-YY") === selectedMonth)
+  );
 };
 
 const GRAPH_CATEGORY_COLORS = [
-  "#1E3D73", "#2196F3", "#11BCD4", "#54C4A7", "#F59E0B", "#8B5CF6",
-  "#E85D75", "#0F766E", "#F97316", "#6366F1", "#84CC16", "#EC4899",
+  "#1E3D73",
+  "#2196F3",
+  "#11BCD4",
+  "#54C4A7",
+  "#F59E0B",
+  "#8B5CF6",
+  "#E85D75",
+  "#0F766E",
+  "#F97316",
+  "#6366F1",
+  "#84CC16",
+  "#EC4899",
 ];
 const GRAPH_CATEGORY_ORDER = [
-  "co working", "meeting", "workation", "alternate channels",
+  "co working",
+  "meeting",
+  "workation",
+  "alternate channels",
 ];
 const getGraphCategoryRank = (category) => {
   const normalized = normalizeCategoryText(category);
@@ -216,6 +255,7 @@ const UniqueLeads = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
+  const queryClient = useQueryClient();
   const leadsTableRef = useRef(null);
 
   const leadsData = useSelector((state) => state?.sales?.leadsData);
@@ -223,7 +263,7 @@ const UniqueLeads = () => {
   const [addLeadOpen, setAddLeadOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
   const {
-    data: websiteSubmissions = [],
+    data: websiteSubmissions = EMPTY_LEADS,
     isLoading: isWebsiteLoading,
     isError: isWebsiteError,
     error: websiteError,
@@ -236,6 +276,58 @@ const UniqueLeads = () => {
       return response.data.data || [];
     },
     staleTime: 60_000,
+  });
+
+  const [editingWebsiteLead, setEditingWebsiteLead] = useState(null);
+  const [websiteFieldErrors, setWebsiteFieldErrors] = useState({});
+  const [historyLead, setHistoryLead] = useState(null);
+  const historySource = historyLead?.isWebsiteLead ? "biznest" : "local";
+  const historyId = historyLead?.websiteId || historyLead?._id;
+  const history = useQuery({
+    queryKey: [
+      "sales-lead-edit-history",
+      historySource,
+      historyId,
+      historyLead?.websiteKind,
+    ],
+    enabled: Boolean(historyLead),
+    retry: false,
+    staleTime: 0,
+    refetchOnMount: "always",
+    queryFn: async () =>
+      (
+        await axios.get(
+          `/api/sales/leads/history/${historySource}/${historyId}`,
+        )
+      ).data,
+  });
+  const websiteEdit = useMutation({
+    mutationFn: ({ lead, changes }) => {
+      const { websiteId } = lead;
+      const { phone, ...fields } = changes;
+      return axios.patch(`/api/sales/leads/website/biznest/${websiteId}`, {
+        ...fields,
+        ...(phone !== undefined ? { mobile: phone } : {}),
+      });
+    },
+    onSuccess: async (_, { lead }) => {
+      setEditingWebsiteLead(null);
+      toast.success("Website lead updated");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["website-unique-leads"] }),
+        queryClient.invalidateQueries({
+          queryKey: ["sales-lead-edit-history", "biznest", lead.websiteId],
+        }),
+      ]);
+    },
+    onError: (error) => {
+      const { field, message } = error.response?.data || {};
+      if (field)
+        setWebsiteFieldErrors({
+          [field === "mobile" ? "phone" : field]: message,
+        });
+      else toast.error(message || "Could not update the website lead");
+    },
   });
 
   const allLeads = useMemo(
@@ -327,11 +419,13 @@ const UniqueLeads = () => {
     fetchLeadsIfEmpty();
   }, [axios, leadsData, dispatch]);
 
-   const { data: services = [], isLoading: isServicesLoading } = useQuery({
+  const { data: services = [], isLoading: isServicesLoading } = useQuery({
     queryKey: ["sales-services"],
     queryFn: async () => {
       const response = await axios.get("/api/sales/services");
-      const filteredData = response?.data?.filter((service)=> service.isActive)
+      const filteredData = response?.data?.filter(
+        (service) => service.isActive,
+      );
       return filteredData;
     },
   });
@@ -362,7 +456,10 @@ const UniqueLeads = () => {
     return value || "";
   };
 
-  const formatLeadDateValue = (value, { useCurrentTimeForToday = false } = {}) => {
+  const formatLeadDateValue = (
+    value,
+    { useCurrentTimeForToday = false } = {},
+  ) => {
     if (!value) return "";
 
     const selectedDate = dayjs(value);
@@ -384,12 +481,12 @@ const UniqueLeads = () => {
     mutationFn: async (formData) => {
       const payload = {
         ...formData,
-         dateOfContact: formatLeadDateValue(formData.dateOfContact),
+        dateOfContact: formatLeadDateValue(formData.dateOfContact),
         startDate: formatLeadDateValue(formData.startDate, {
           useCurrentTimeForToday: true,
         }),
         proposedLocations: normalizeProposedLocationValue(
-          formData.proposedLocations
+          formData.proposedLocations,
         ),
         officeInGoa: formData.officeInGoa === "true",
         openDesks: Number(formData.openDesks || 0),
@@ -407,29 +504,81 @@ const UniqueLeads = () => {
       await fetchLeads();
     },
     onError: (error) => {
-      toast.error(error?.response?.data?.message || error.message || "Failed to create lead");
+      toast.error(
+        error?.response?.data?.message ||
+          error.message ||
+          "Failed to create lead",
+      );
     },
   });
 
   const addLeadFields = [
     { name: "dateOfContact", label: "Date Of Contact", type: "datePicker" },
     { name: "companyName", label: "Company Name", required: true },
-    { name: "serviceCategory", label: "Service Category", type: "select", options: services.map((service) => ({ value: service._id, label: service.serviceName })) },
-    { name: "leadStatus", label: "Lead Status", type: "select", options: ["Cold", "Mild", "Hot", "Closed"].map((value) => ({ value, label: value })) },
-    { name: "proposedLocations", label: "Proposed Locations", type: "select", options: units.map((unit) => ({ value: unit._id, label: unit.unitNo || unit.unitName || "Unit" })) },
+    {
+      name: "serviceCategory",
+      label: "Service Category",
+      type: "select",
+      options: services.map((service) => ({
+        value: service._id,
+        label: service.serviceName,
+      })),
+    },
+    {
+      name: "leadStatus",
+      label: "Lead Status",
+      type: "select",
+      options: LEAD_STATUSES.map((value) => ({ value, label: value })),
+    },
+    {
+      name: "proposedLocations",
+      label: "Proposed Locations",
+      type: "select",
+      options: units.map((unit) => ({
+        value: unit._id,
+        label: unit.unitNo || unit.unitName || "Unit",
+      })),
+    },
     { name: "sector", label: "Sector", required: false },
-    { name: "headOfficeLocation", label: "Head Office Location", required: false },
-    { name: "officeInGoa", label: "Office In Goa", type: "select", options: [{ value: "true", label: "Yes" }, { value: "false", label: "No" }] },
+    {
+      name: "headOfficeLocation",
+      label: "Head Office Location",
+      required: false,
+    },
+    {
+      name: "officeInGoa",
+      label: "Office In Goa",
+      type: "select",
+      options: [
+        { value: "true", label: "Yes" },
+        { value: "false", label: "No" },
+      ],
+    },
     { name: "pocName", label: "POC Name" },
     { name: "designation", label: "Designation", required: false },
     { name: "contactNumber", label: "Contact Number" },
-    { name: "emailAddress", label: "Email Address", type: "email", required: false },
+    {
+      name: "emailAddress",
+      label: "Email Address",
+      type: "email",
+      required: false,
+    },
     { name: "leadSource", label: "Lead Source" },
     { name: "period", label: "Period", required: false },
     { name: "openDesks", label: "Open Desks", type: "number" },
     { name: "cabinDesks", label: "Cabin Desks", type: "number" },
-    { name: "totalDesks", label: "Total Desks", type: "number", readOnly: true },
-    { name: "clientBudget", label: "Client Budget", type: "number", required: false },
+    {
+      name: "totalDesks",
+      label: "Total Desks",
+      type: "number",
+      readOnly: true,
+    },
+    {
+      name: "clientBudget",
+      label: "Client Budget",
+      type: "number",
+      required: false,
+    },
     { name: "startDate", label: "Start Date", type: "datePicker" },
     { name: "remarksComments", label: "Remarks Comments", required: false },
   ];
@@ -502,8 +651,8 @@ const UniqueLeads = () => {
     setSelectedMonth(newMonth);
     navigate(
       `/app/dashboard/sales-dashboard/unique-leads?month=${encodeURIComponent(
-        newMonth
-      )}`
+        newMonth,
+      )}`,
     );
   };
 
@@ -560,12 +709,16 @@ const UniqueLeads = () => {
     const yearsSet = new Set([getCurrentFinancialYearLabel()]);
 
     const currentFyMatch = getCurrentFinancialYearLabel().match(/\d{4}/);
-    const currentStartYear = currentFyMatch ? parseInt(currentFyMatch[0], 10) : null;
+    const currentStartYear = currentFyMatch
+      ? parseInt(currentFyMatch[0], 10)
+      : null;
 
     if (currentStartYear) {
       for (let offset = 1; offset <= 10; offset += 1) {
         const startYear = currentStartYear + offset;
-        yearsSet.add(`FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`);
+        yearsSet.add(
+          `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`,
+        );
       }
     }
 
@@ -652,13 +805,15 @@ const UniqueLeads = () => {
   //   );
   const EMPTY_VIEW_VALUE = "-";
 
-   const getOptionLabel = (value, fallback = EMPTY_VIEW_VALUE) => {
+  const getOptionLabel = (value, fallback = EMPTY_VIEW_VALUE) => {
     if (!value) return fallback;
     if (Array.isArray(value)) {
-      return value
-        .map((item) => getOptionLabel(item, ""))
-        .filter(Boolean)
-        .join(", ") || fallback;
+      return (
+        value
+          .map((item) => getOptionLabel(item, ""))
+          .filter(Boolean)
+          .join(", ") || fallback
+      );
     }
     if (typeof value === "string" || typeof value === "number") return value;
     return (
@@ -669,8 +824,7 @@ const UniqueLeads = () => {
       value.label ||
       fallback
     );
-
-    };
+  };
 
   const formatBoolean = (value) => {
     if (value === true || value === "true") return "Yes";
@@ -682,12 +836,17 @@ const UniqueLeads = () => {
     const value = lead?.[field];
     if (type === "date") return value ? humanDate(value) : EMPTY_VIEW_VALUE;
     if (type === "dateTime") {
-      return value ? dayjs(value).format("DD-MM-YYYY, hh:mm A") : EMPTY_VIEW_VALUE;
+      return value
+        ? dayjs(value).format("DD-MM-YYYY, hh:mm A")
+        : EMPTY_VIEW_VALUE;
     }
-    if (type === "currency") return value || value === 0 ? `INR ${value}` : EMPTY_VIEW_VALUE;
+    if (type === "currency")
+      return value || value === 0 ? `INR ${value}` : EMPTY_VIEW_VALUE;
     if (type === "boolean") return formatBoolean(value);
-    if (field === "serviceCategory") return getOptionLabel(value, EMPTY_VIEW_VALUE);
-    if (field === "proposedLocations") return getOptionLabel(value, EMPTY_VIEW_VALUE);
+    if (field === "serviceCategory")
+      return getOptionLabel(value, EMPTY_VIEW_VALUE);
+    if (field === "proposedLocations")
+      return getOptionLabel(value, EMPTY_VIEW_VALUE);
     return value === "" || value == null ? EMPTY_VIEW_VALUE : value;
   };
 
@@ -698,6 +857,11 @@ const UniqueLeads = () => {
 
   const handleEditLead = (lead) => {
     if (!lead) return;
+    if (lead.isWebsiteLead) {
+      setWebsiteFieldErrors({});
+      setEditingWebsiteLead(lead);
+      return;
+    }
     navigate(encodeURIComponent(lead.companyName || lead._id), {
       state: {
         selectedLead: lead,
@@ -766,10 +930,14 @@ const UniqueLeads = () => {
   //   },
   // ];
 
-  const graphDomains = (viewType === "month"
-    ? selectedMonthData?.domains || []
-    : Object.entries(yearlyRevenueData).map(([name, data]) => ({ name, ...data })))
-    .sort((a, b) => getGraphCategoryRank(a.name) - getGraphCategoryRank(b.name));
+  const graphDomains = (
+    viewType === "month"
+      ? selectedMonthData?.domains || []
+      : Object.entries(yearlyRevenueData).map(([name, data]) => ({
+          name,
+          ...data,
+        }))
+  ).sort((a, b) => getGraphCategoryRank(a.name) - getGraphCategoryRank(b.name));
   const graphCategories = graphDomains.map((domain) => domain.name);
 
   const graphData = [
@@ -793,11 +961,18 @@ const UniqueLeads = () => {
     },
     yaxis: { title: { text: "Leads" } },
     plotOptions: {
-      bar: { horizontal: false, columnWidth: "20%", borderRadius: 3, distributed: true },
+      bar: {
+        horizontal: false,
+        columnWidth: "20%",
+        borderRadius: 3,
+        distributed: true,
+      },
     },
     legend: { show: false },
     dataLabels: { enabled: true, position: "top" },
-    colors: graphCategories.map((_, index) => GRAPH_CATEGORY_COLORS[index % GRAPH_CATEGORY_COLORS.length]),
+    colors: graphCategories.map(
+      (_, index) => GRAPH_CATEGORY_COLORS[index % GRAPH_CATEGORY_COLORS.length],
+    ),
   };
 
   // const availableMonths = useMemo(() => {
@@ -811,7 +986,6 @@ const UniqueLeads = () => {
   //     (a, b) => MONTH_ORDER.indexOf(a) - MONTH_ORDER.indexOf(b)
   //   );
   // }, [leadsData]);
-
 
   const formatMonths = useMemo(() => {
     const fyMatch = selectedFY.match(/\d{4}/);
@@ -829,7 +1003,9 @@ const UniqueLeads = () => {
 
   const filteredLeads = useMemo(() => {
     if (!selectedMonth || !selectedFY || allLeads.length === 0) return [];
-    return allLeads.filter((lead) => matchesLeadPeriod(lead, selectedFY, selectedMonth));
+    return allLeads.filter((lead) =>
+      matchesLeadPeriod(lead, selectedFY, selectedMonth),
+    );
   }, [selectedMonth, selectedFY, allLeads]);
 
   return (
@@ -839,7 +1015,8 @@ const UniqueLeads = () => {
           {isWebsiteLoading && <span>Loading website leads…</span>}
           {isWebsiteError && (
             <span role="alert" className="text-red-600">
-              {websiteError?.response?.data?.message || "Website leads are unavailable. Local leads are still shown."}
+              {websiteError?.response?.data?.message ||
+                "Website leads are unavailable. Local leads are still shown."}
             </span>
           )}
         </div>
@@ -858,7 +1035,12 @@ const UniqueLeads = () => {
               <span key={category} className="inline-flex items-center gap-1.5">
                 <span
                   className="h-3 w-3 shrink-0 rounded-sm"
-                  style={{ backgroundColor: GRAPH_CATEGORY_COLORS[index % GRAPH_CATEGORY_COLORS.length] }}
+                  style={{
+                    backgroundColor:
+                      GRAPH_CATEGORY_COLORS[
+                        index % GRAPH_CATEGORY_COLORS.length
+                      ],
+                  }}
                 />
                 {category}
               </span>
@@ -890,8 +1072,8 @@ const UniqueLeads = () => {
               setSelectedMonth(defaultMonth);
               navigate(
                 `/app/dashboard/sales-dashboard/unique-leads?month=${encodeURIComponent(
-                  defaultMonth
-                )}`
+                  defaultMonth,
+                )}`,
               );
             }}
             label="Select Financial Year"
@@ -938,7 +1120,8 @@ const UniqueLeads = () => {
               srNo: index + 1,
               dateOfContact: item.dateOfContact,
               companyName: item.companyName,
-              categoryLabel: item.categoryLabel || getOptionLabel(item.serviceCategory),
+              categoryLabel:
+                item.categoryLabel || getOptionLabel(item.serviceCategory),
               serviceCategoryLabel: getOptionLabel(item.serviceCategory),
               headOfficeLocation: item.headOfficeLocation,
               officeInGoaLabel: formatBoolean(item.officeInGoa),
@@ -997,26 +1180,86 @@ const UniqueLeads = () => {
                 //   );
                 // },
               },
-              { headerName: "POC Name", field: "pocName",flex: 1 },
-              { headerName: "Designation", field: "designation",flex: 1,hide: true },
-              { headerName: "Contact Number", field: "contactNumber",flex: 1},
-              { headerName: "Email Address", field: "emailAddress", flex: 1 ,hide: true},
-              { headerName: "Lead Status", field: "leadStatus" ,flex: 1},
+              { headerName: "POC Name", field: "pocName", flex: 1 },
+              {
+                headerName: "Designation",
+                field: "designation",
+                flex: 1,
+                hide: true,
+              },
+              { headerName: "Contact Number", field: "contactNumber", flex: 1 },
+              {
+                headerName: "Email Address",
+                field: "emailAddress",
+                flex: 1,
+                hide: true,
+              },
+              { headerName: "Lead Status", field: "leadStatus", flex: 1 },
               { headerName: "Source", field: "sourceCompany", flex: 1 },
               { headerName: "Category", field: "categoryLabel", flex: 1 },
-              { headerName: "Listing", field: "websitePage", flex: 1, hide: true },
+              {
+                headerName: "Listing",
+                field: "websitePage",
+                flex: 1,
+                hide: true,
+              },
               { headerName: "Kind", field: "websiteKind", flex: 1, hide: true },
-              { headerName: "Count", field: "inquiryCount", flex: 1, hide: true },
-              { headerName: "Sector", field: "sector",flex: 1,hide: true },
-              { headerName: "Service Category", field: "serviceCategoryLabel",flex: 1,hide: true },
-              { headerName: "Proposed Locations", field: "proposedLocationsLabel", flex: 1, hide: true },
-              { headerName: "Head Office Location", field: "headOfficeLocation", flex: 1, hide: true },
-              { headerName: "Office In Goa", field: "officeInGoaLabel", flex: 1, hide: true },
-              { headerName: "Lead Source", field: "leadSource", flex: 1, hide: true },
+              {
+                headerName: "Count",
+                field: "inquiryCount",
+                flex: 1,
+                hide: true,
+              },
+              { headerName: "Sector", field: "sector", flex: 1, hide: true },
+              {
+                headerName: "Service Category",
+                field: "serviceCategoryLabel",
+                flex: 1,
+                hide: true,
+              },
+              {
+                headerName: "Proposed Locations",
+                field: "proposedLocationsLabel",
+                flex: 1,
+                hide: true,
+              },
+              {
+                headerName: "Head Office Location",
+                field: "headOfficeLocation",
+                flex: 1,
+                hide: true,
+              },
+              {
+                headerName: "Office In Goa",
+                field: "officeInGoaLabel",
+                flex: 1,
+                hide: true,
+              },
+              {
+                headerName: "Lead Source",
+                field: "leadSource",
+                flex: 1,
+                hide: true,
+              },
               { headerName: "Period", field: "period", flex: 1, hide: true },
-              { headerName: "Open Desks", field: "openDesks", flex: 1, hide: true },
-              { headerName: "Cabin Desks", field: "cabinDesks", flex: 1, hide: true },
-              { headerName: "Total Desks", field: "totalDesks", flex: 1, hide: true },
+              {
+                headerName: "Open Desks",
+                field: "openDesks",
+                flex: 1,
+                hide: true,
+              },
+              {
+                headerName: "Cabin Desks",
+                field: "cabinDesks",
+                flex: 1,
+                hide: true,
+              },
+              {
+                headerName: "Total Desks",
+                field: "totalDesks",
+                flex: 1,
+                hide: true,
+              },
               {
                 headerName: "Client Budget",
                 field: "clientBudget",
@@ -1041,11 +1284,16 @@ const UniqueLeads = () => {
                 valueFormatter: (params) =>
                   params.value ? humanDate(params.value) : "â€”",
               },
-              { headerName: "Remarks Comments", field: "remarksComments", flex: 1,hide: true },
-                {
+              {
+                headerName: "Remarks Comments",
+                field: "remarksComments",
+                flex: 1,
+                hide: true,
+              },
+              {
                 headerName: "Action",
                 field: "action",
-                flex:1,
+                flex: 1,
                 pinned: "right",
                 suppressCsvExport: true,
                 suppressExcelExport: true,
@@ -1059,17 +1307,29 @@ const UniqueLeads = () => {
                     >
                       <MdOutlineRemoveRedEye size={20} />
                     </IconButton>
-                    {!params.data?.isWebsiteLead && (
-                      <ThreeDotMenu
-                        rowId={params.data?._id || params.data?.companyName}
-                        menuItems={[
-                          {
-                            label: "Edit",
-                            onClick: () => handleEditLead(params.data),
-                          },
-                        ]}
-                      />
-                    )}
+                    {params.data &&
+                      (!params.data.isWebsiteLead || params.data.websiteId) && (
+                        <>
+                          <button
+                            type="button"
+                            aria-label="View edit history"
+                            title="View Edit History"
+                            className="flex h-8 w-8 items-center justify-center text-black hover:text-primary"
+                            onClick={() => setHistoryLead(params.data)}
+                          >
+                            <MdHistory size={21} />
+                          </button>
+                          <button
+                            type="button"
+                            aria-label="Edit lead"
+                            title="Edit Lead"
+                            className="flex h-8 w-8 items-center justify-center text-black hover:text-primary"
+                            onClick={() => handleEditLead(params.data)}
+                          >
+                            <HiPencilSquare size={24} />
+                          </button>
+                        </>
+                      )}
                   </div>
                 ),
               },
@@ -1096,13 +1356,16 @@ const UniqueLeads = () => {
           />
         </div>
       </WidgetSection>
-       <MuiModal
+      <MuiModal
         open={addLeadOpen}
         onClose={() => setAddLeadOpen(false)}
         title={"Add Leads"}
         widthClass="w-4/5 max-w-5xl"
       >
-        <form onSubmit={handleSubmit((data) => createLead(data))} className="flex flex-col gap-4">
+        <form
+          onSubmit={handleSubmit((data) => createLead(data))}
+          className="flex flex-col gap-4"
+        >
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {addLeadFields.map(renderAddLeadField)}
@@ -1117,6 +1380,27 @@ const UniqueLeads = () => {
           />
         </form>
       </MuiModal>
+      {editingWebsiteLead && (
+        <WebsiteLeadEditForm
+          lead={editingWebsiteLead}
+          onClose={() => setEditingWebsiteLead(null)}
+          onSave={(changes) => {
+            setWebsiteFieldErrors({});
+            websiteEdit.mutate({ lead: editingWebsiteLead, changes });
+          }}
+          saving={websiteEdit.isPending}
+          serverErrors={websiteFieldErrors}
+        />
+      )}
+      {historyLead && (
+        <SalesEditHistory
+          title="Lead Edit History"
+          editHistory={history.data || EMPTY_LEADS}
+          historyPending={history.isPending}
+          historyError={history.isError}
+          onClose={() => setHistoryLead(null)}
+        />
+      )}
       <MuiModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -1124,8 +1408,12 @@ const UniqueLeads = () => {
       >
         {selectedLead ? (
           <div className="grid grid-cols-1 gap-4">
-            {(selectedLead.websiteKind === "product" ? productViewFields
-              : selectedLead.isWebsiteLead ? websiteViewFields : viewDetailFields).map(({ label, field, type }) => (
+            {(selectedLead.websiteKind === "product"
+              ? productViewFields
+              : selectedLead.isWebsiteLead
+                ? websiteViewFields
+                : viewDetailFields
+            ).map(({ label, field, type }) => (
               <DetalisFormatted
                 key={field}
                 title={label}

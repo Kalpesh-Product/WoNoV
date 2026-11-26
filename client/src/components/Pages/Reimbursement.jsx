@@ -8,7 +8,7 @@ import {
   Box,
   IconButton,
   FormControl,
-  CircularProgress,
+  Skeleton,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import PrimaryButton from "../PrimaryButton";
@@ -26,6 +26,7 @@ import PageFrame from "./PageFrame";
 import UploadFileInput from "../UploadFileInput";
 import html2pdf from "html2pdf.js";
 import { isAlphanumeric, noOnlyWhitespace } from "../../utils/validators";
+import AdminLoadingSkeleton from "../../pages/Dashboard/AdminDashboard/AdminLoadingSkeleton";
 
 // Tailwind classes
 const cellClasses = "border border-black p-2 text-xs align-top";
@@ -302,6 +303,20 @@ const Reimbursement = () => {
     await html2pdf().set(opt).from(formRef.current).save();
   };
 
+  if (locationsLoading || (department?._id && isDepartmentLoading)) {
+    return (
+      <PageFrame>
+        <div className="space-y-5" role="status" aria-label="Loading voucher form">
+          <Skeleton variant="text" width="45%" height={36} />
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            {Array.from({ length: 9 }, (_, index) => <Skeleton key={index} variant="rectangular" height={44} className="rounded-md" />)}
+          </div>
+          <Skeleton variant="rectangular" height={110} className="rounded-md" />
+        </div>
+      </PageFrame>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-4 ">
       <PageFrame>
@@ -334,9 +349,7 @@ const Reimbursement = () => {
                       Select Building
                     </MenuItem>
                     {locationsLoading ? (
-                      <MenuItem disabled>
-                        <CircularProgress size={20} />
-                      </MenuItem>
+                      <AdminLoadingSkeleton variant="option" />
                     ) : locationsError ? (
                       <MenuItem disabled>Error fetching units</MenuItem>
                     ) : (
@@ -365,9 +378,7 @@ const Reimbursement = () => {
                   >
                     <MenuItem value="">Select Unit</MenuItem>
                     {locationsLoading ? (
-                      <MenuItem disabled>
-                        <CircularProgress size={20} />
-                      </MenuItem>
+                      <AdminLoadingSkeleton variant="option" />
                     ) : (
                       units
                         .filter(

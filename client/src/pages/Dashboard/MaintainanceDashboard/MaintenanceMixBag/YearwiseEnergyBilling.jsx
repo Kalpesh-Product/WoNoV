@@ -10,6 +10,7 @@ import PageFrame from "../../../../components/Pages/PageFrame";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import WidgetSection from "../../../../components/WidgetSection";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import SalesDashboardChartSkeleton from "../../SalesDashboard/SalesDashboardChartSkeleton";
 
 const FINANCIAL_YEAR = {
   label: "FY 2026-27",
@@ -87,6 +88,7 @@ const YearwiseEnergyBilling = ({
     FINANCIAL_YEAR.start.year(),
   );
   const [monthlyData, setMonthlyData] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const financialYearMonths = useMemo(
     () => createFinancialYearMonths(selectedFYStartYear),
@@ -95,6 +97,7 @@ const YearwiseEnergyBilling = ({
 
   useEffect(() => {
     let active = true;
+    setIsLoading(true);
     setMonthlyData([]);
 
     Promise.all(
@@ -144,6 +147,9 @@ const YearwiseEnergyBilling = ({
               `Unable to load ${overall ? "overall" : "unit-wise"} energy bills`,
           );
         }
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
       });
 
     return () => {
@@ -344,14 +350,18 @@ const YearwiseEnergyBilling = ({
             </div>
           }
         >
-          <div className={detailsRoute ? "cursor-pointer" : ""}>
-            <Chart
-              options={chartOptions}
-              series={series}
-              type="bar"
-              height={embedded ? 360 : 450}
-            />
-          </div>
+          {isLoading ? (
+            <SalesDashboardChartSkeleton title={graphTitle} height={embedded ? 360 : 450} />
+          ) : (
+            <div className={detailsRoute ? "cursor-pointer" : ""}>
+              <Chart
+                options={chartOptions}
+                series={series}
+                type="bar"
+                height={embedded ? 360 : 450}
+              />
+            </div>
+          )}
 
           <div className="flex items-center justify-center gap-2 pb-1">
             <button
@@ -381,6 +391,7 @@ const YearwiseEnergyBilling = ({
         {!embedded ? (
           <PageFrame>
             <YearWiseTable
+              loading={isLoading}
               data={rows}
               columns={columns}
               tableTitle={`${graphTitle} - ${selectedFYLabel}`}

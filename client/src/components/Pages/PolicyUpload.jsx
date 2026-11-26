@@ -399,6 +399,7 @@ const PolicyUpload = () => {
       <div>
         <PageFrame>
           <YearWiseTable
+            loading={isLoading}
             dateRangePlaceholders
             dateFilterOptions={[{ field: "date", label: "Uploaded Date" }, { field: "updatedAt", label: "Modified Date" }]}
             key={tableData.length}

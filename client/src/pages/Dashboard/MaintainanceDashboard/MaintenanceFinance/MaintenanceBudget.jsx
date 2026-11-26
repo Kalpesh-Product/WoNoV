@@ -1,4 +1,4 @@
-﻿import React, { Suspense, useEffect, useMemo, useState } from "react";
+﻿import React, { Suspense, useMemo, useState } from "react";
 import WidgetSection from "../../../../components/WidgetSection";
 import {
   TextField,
@@ -28,7 +28,6 @@ import usePageDepartment from "../../../../hooks/usePageDepartment";
 
 const Maintenance = () => {
   const axios = useAxiosPrivate();
-  const [isReady, setIsReady] = useState(false);
   const department = usePageDepartment()
 
   const [openModal, setOpenModal] = useState(false);
@@ -73,13 +72,6 @@ const Maintenance = () => {
     if (isHrLoading || !Array.isArray(hrFinance)) return null;
     return transformBudgetData(isHrLoading ? [] : hrFinance);
   }, [isHrLoading, hrFinance]);
-
-  useEffect(() => {
-    if (!isHrLoading) {
-      const timer = setTimeout(() => setIsReady(true), 1000);
-      return () => clearTimeout(timer); // Cleanup on unmount
-    }
-  }, [isHrLoading]);
 
   const expenseRawSeries = useMemo(() => {
     return [
@@ -267,13 +259,15 @@ const Maintenance = () => {
     .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending
 
   // ---------------------------------------------------------------------//
-  if (!isReady) {
-    return <Skeleton height="100vh" width="100%" />;
-  } else {
     return (
       <div className="flex flex-col gap-8">
         <div>
-          <Suspense
+          {isHrLoading ? (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <Skeleton variant="text" width={240} height={30} />
+              <Skeleton variant="rectangular" width="100%" height={300} />
+            </Box>
+          ) : <Suspense
             fallback={
               <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 {/* Simulating chart skeleton */}
@@ -290,7 +284,7 @@ const Maintenance = () => {
                 "en-IN"
               )}`}
             />
-          </Suspense>
+          </Suspense>}
         </div>
         <div>
           <WidgetSection layout={2} padding>
@@ -309,16 +303,12 @@ const Maintenance = () => {
         </div>
 
 
-        {!isHrLoading ? (
           <AllocatedBudget
             onRequestBudget={() => setOpenModal(true)}
             financialData={financialData}
             isLoading={isHrLoading}
             variant={"fullWidth"}
           />
-        ) : (
-          <Skeleton height={600} width={"100%"} />
-        )}
 
         <MuiModal
           title="Request Budget"
@@ -436,7 +426,6 @@ const Maintenance = () => {
         </MuiModal>
       </div>
     );
-  }
 };
 
 export default Maintenance;

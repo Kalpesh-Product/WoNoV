@@ -1336,6 +1336,12 @@ const getMyMeetings = async (req, res, next) => {
             .join(" ")
         : "";
 
+      const externalBookedBy = meeting.externalBookedBy
+        ? [meeting.externalBookedBy.firstName, meeting.externalBookedBy.lastName]
+            .filter(Boolean)
+            .join(" ")
+        : "";
+
       const isReceptionist = (meeting.receptionist?.departments || []).some(
         (dept) => dept.name === "Administration",
       );
@@ -1387,7 +1393,11 @@ const getMyMeetings = async (req, res, next) => {
         isCurrentUserBooked,
         // bookedBy: bookedBy,
          bookedBy:
-          bookedBy || meeting.clientBookedBy?.employeeName || "Unknown",
+          bookedBy ||
+          externalBookedBy ||
+          meeting.clientBookedBy?.employeeName ||
+          "Unknown",
+        externalBookedBy: externalBookedBy || null,
         clientBookedBy: meeting.clientBookedBy,
         department: getMeetingDepartments(meeting),
         roomName: meeting.bookedRoom.name,

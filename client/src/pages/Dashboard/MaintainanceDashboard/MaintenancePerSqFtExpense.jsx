@@ -12,6 +12,7 @@ import NormalBarGraph from "../../../components/graphs/NormalBarGraph";
 import usePageDepartment from "../../../hooks/usePageDepartment";
 import SecondaryButton from "../../../components/SecondaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
+import SalesDashboardChartSkeleton from "../SalesDashboard/SalesDashboardChartSkeleton";
 
 const formatCurrencyWithDecimals = (value = 0) =>
   Number(value).toLocaleString("en-IN", {
@@ -53,7 +54,7 @@ const MaintenancePerSqFtExpense = () => {
     ? MAINTENANCE_DEPARTMENT_ID
     : department?._id;
 
-  const { data: maintenanceBudgets = [] } = useQuery({
+  const { data: maintenanceBudgets = [], isPending: isBudgetsLoading } = useQuery({
     queryKey: ["departmentBudget", activeDepartmentId],
     queryFn: async () => {
       const response = await axios.get(
@@ -159,7 +160,7 @@ const MaintenancePerSqFtExpense = () => {
         TitleAmount={`INR ${formatCurrencyWithDecimals(expensePerSqFtTotal)}`}
       >
         <div className="flex flex-col gap-4 rounded-md">
-          <NormalBarGraph data={barGraphSeries} options={expenseOptions} />
+          {isBudgetsLoading ? <SalesDashboardChartSkeleton title="Expense per Sqft" /> : <NormalBarGraph data={barGraphSeries} options={expenseOptions} />}
 
           <div className="flex justify-center items-center gap-4 pt-2 -mt-2 pb-4">
             <SecondaryButton
@@ -184,6 +185,7 @@ const MaintenancePerSqFtExpense = () => {
       </WidgetSection>
       <PageFrame>
         <AgTable
+          loading={isBudgetsLoading}
           data={tableData}
           columns={columns}
           search

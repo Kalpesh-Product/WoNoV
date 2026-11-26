@@ -432,7 +432,11 @@ const MeetingReports = () => {
                       "N/A",
                     bookedBy: item.bookedBy
                       ? `${item.bookedBy.firstName} ${item.bookedBy.lastName}`
-                      : item.clientBookedBy?.employeeName || "Unknown",
+                      : item.externalBookedBy
+                        ? typeof item.externalBookedBy === "string"
+                          ? item.externalBookedBy
+                          : `${item.externalBookedBy.firstName ?? ""} ${item.externalBookedBy.lastName ?? ""}`.trim()
+                        : item.clientBookedBy?.employeeName || "Unknown",
                     companyName:
                       item?.company?.companyName ||
                       item?.client ||

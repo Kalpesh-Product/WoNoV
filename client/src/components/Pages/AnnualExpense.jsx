@@ -16,6 +16,7 @@ import { transformBudgetData } from "../../utils/transformBudgetData";
 import YearlyGraph from "../../components/graphs/YearlyGraph";
 import useAuth from "../../hooks/useAuth";
 import usePageDepartment from "../../hooks/usePageDepartment";
+import AdminLoadingSkeleton from "../../pages/Dashboard/AdminDashboard/AdminLoadingSkeleton";
 
 const AnnualExpense = () => {
   const axios = useAxiosPrivate();
@@ -218,21 +219,12 @@ const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
 
   // BUDGET NEW START
 
-  const [isReady, setIsReady] = useState(false);
-
   // const [openModal, setOpenModal] = useState(false);
 
   const budgetBar = useMemo(() => {
     if (isHrLoading || !Array.isArray(hrFinance)) return null;
     return transformBudgetData(hrFinance);
   }, [isHrLoading, hrFinance]);
-
-  useEffect(() => {
-    if (!isHrLoading) {
-      const timer = setTimeout(() => setIsReady(true), 1000);
-      return () => clearTimeout(timer); // Cleanup on unmount
-    }
-  }, [isHrLoading]);
 
 const expenseRawSeries = useMemo(() => {
   // Initialize monthly buckets
@@ -377,7 +369,7 @@ const totalUtilised =
         onYearChange={setSelectedFiscalYear}
       /> */}
 
-      <AllocatedBudget financialData={financialData} annaualExpense={true} exportData/>
+      <AllocatedBudget financialData={financialData} annaualExpense={true} exportData isLoading={isHrLoading} />
       <MuiModal
         title="Request Budget"
         open={openModal}
@@ -449,7 +441,7 @@ const totalUtilised =
                     Select Building
                   </MenuItem>
                   {locationsLoading
-                    ? []
+                    ? <AdminLoadingSkeleton variant="option" />
                     : uniqueBuildings.map((building) => (
                         <MenuItem key={building[0]} value={building[1]}>
                           {building[1]}
@@ -472,7 +464,7 @@ const totalUtilised =
                     Select Unit
                   </MenuItem>
                   {locationsLoading
-                    ? []
+                    ? <AdminLoadingSkeleton variant="option" />
                     : units.map((unit) =>
                         unit.building.buildingName === selectedBuilding ? (
                           <MenuItem key={unit._id} value={unit._id}>

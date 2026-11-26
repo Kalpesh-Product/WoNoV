@@ -82,7 +82,12 @@ const modelKeyGroups = {
     "id",
     "coworkingclientid",
   ],
-  CoworkingMember: ["clientToMeet", "clientParticipants", "memberId"],
+  CoworkingMember: [
+    "clientToMeet",
+    "clientParticipants",
+    "clientBookedBy",
+    "memberId",
+  ],
   ClientService: ["serviceId"],
   MeetingClientRevenue: ["id"],
   VirtualOfficeClient: ["virtualOfficeClientId", "id"],
@@ -104,7 +109,7 @@ const modelKeyGroups = {
   kraKpaRole: ["taskId", "task"],
 
   //Visitor IDs
-  Visitor: ["visitorId", "externalCompany"],
+  Visitor: ["visitorId", "externalBookedBy", "externalCompany"],
 
   //Vendor IDs
   Vendor: ["vendorId"],

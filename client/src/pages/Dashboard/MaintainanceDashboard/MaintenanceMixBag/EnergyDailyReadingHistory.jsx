@@ -14,6 +14,7 @@ const EnergyDailyReadingHistory = () => {
   const location = useLocation();
   const axiosPrivate = useAxiosPrivate();
   const [history, setHistory] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const storageKey = `energyDailyReadingHistory:${module || "unknown"}`;
   const readingId =
     location.state?.readingId ||
@@ -26,6 +27,7 @@ const EnergyDailyReadingHistory = () => {
     }
 
     let active = true;
+    setIsLoading(true);
     axiosPrivate
       .get(`/api/maintenance/energy-daily-history/${module}`, {
         params: { readingId },
@@ -33,7 +35,8 @@ const EnergyDailyReadingHistory = () => {
       .then(({ data }) => active && setHistory(data.data || []))
       .catch((error) =>
         toast.error(error.response?.data?.message || "Unable to load reading history"),
-      );
+      )
+      .finally(() => { if (active) setIsLoading(false); });
     return () => {
       active = false;
     };
@@ -68,6 +71,7 @@ const EnergyDailyReadingHistory = () => {
     <div className="p-4">
       <PageFrame>
         <AgTable
+          loading={isLoading}
           data={data}
           columns={columns}
           search

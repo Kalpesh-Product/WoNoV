@@ -4,6 +4,7 @@ import { Chip, IconButton, Modal, TextField } from "@mui/material";
 import dayjs from "dayjs";
 import { AnimatePresence, motion } from "motion/react";
 import Chart from "react-apexcharts";
+import SalesDashboardChartSkeleton from "../../SalesDashboard/SalesDashboardChartSkeleton";
 import { IoMdClose } from "react-icons/io";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 import { FaEye } from "react-icons/fa";
@@ -264,6 +265,8 @@ const MaintainanceDtcEnergyReadingMonthly = () => {
   const [todayDateKey, setTodayDateKey] = useState(getTodayDateKey);
   const [records, setRecords] = useState([]);
   const [graphRecords, setGraphRecords] = useState([]);
+  const [isRecordsLoading, setIsRecordsLoading] = useState(true);
+  const [isGraphLoading, setIsGraphLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [modalMode, setModalMode] = useState("add");
@@ -536,6 +539,7 @@ const MaintainanceDtcEnergyReadingMonthly = () => {
 
   useEffect(() => {
     let active = true;
+    setIsRecordsLoading(true);
     const loadMonthlyBills = () => {
       axiosPrivate
         .get(DTC_ENERGY_MONTHLY_GET_API, { params: { date: monthBillDate } })
@@ -554,7 +558,8 @@ const MaintainanceDtcEnergyReadingMonthly = () => {
               error.response?.data?.message || "Unable to load DTC monthly bills",
             );
           }
-        });
+        })
+        .finally(() => { if (active) setIsRecordsLoading(false); });
     };
 
     loadMonthlyBills();
@@ -579,6 +584,7 @@ const MaintainanceDtcEnergyReadingMonthly = () => {
 
   useEffect(() => {
     let active = true;
+    setIsGraphLoading(true);
     const loadGraphMonthlyBills = () => {
       axiosPrivate
         .get(DTC_ENERGY_MONTHLY_GET_API, {
@@ -596,7 +602,8 @@ const MaintainanceDtcEnergyReadingMonthly = () => {
                 "Unable to load DTC graph monthly bills",
             );
           }
-        });
+        })
+        .finally(() => { if (active) setIsGraphLoading(false); });
     };
 
     loadGraphMonthlyBills();
@@ -938,12 +945,12 @@ const MaintainanceDtcEnergyReadingMonthly = () => {
           }
         >
           <div className="flex flex-col gap-4">
-            <Chart
+            {isGraphLoading ? <SalesDashboardChartSkeleton title="Dempo Trade Centre Energy Consumption" height={450} /> : <Chart
               options={chartOptions}
               series={chartSeries}
               type="bar"
               height={450}
-            />
+            />}
 
             <div className="flex items-center justify-center gap-2 pb-1">
               <button
@@ -980,6 +987,7 @@ const MaintainanceDtcEnergyReadingMonthly = () => {
         <PageFrame>
           <div className="flex flex-col gap-5">
             <YearWiseTable
+              loading={isRecordsLoading}
               data={records}
               columns={columns}
               tableTitle="Dempo Trade Centre - Energy Consumption Bill"

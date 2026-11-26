@@ -13,6 +13,9 @@ const BreadCrumbComponent = () => {
   const selectedMember = useSelector(
     (state) => state.performance.selectedMember,
   );
+  const selectedLogEmployee = useSelector(
+    (state) => state.hr.selectedEmployee,
+  );
   const isEmployeeKraKpaPage =
     location.pathname.startsWith("/app/kra-kpa/") &&
     /\/(individual-Monthly-KPA|self-KRA|due-task|daily-logs)$/i.test(
@@ -276,6 +279,21 @@ const BreadCrumbComponent = () => {
         {memberName}
       </Typography>,
     );
+  }
+
+  // Once an employee is picked in the Logs module, show their name at the end
+  // of the trail. It is intentionally not a link (no page exists for it).
+  if (location.pathname.startsWith("/app/logs") && pathSegments.length > 1) {
+    const logEmployeeName =
+      location.state?.user?.name || selectedLogEmployee?.name;
+
+    if (logEmployeeName) {
+      breadcrumbs.push(
+        <Typography key="log-employee" color="text.primary">
+          {logEmployeeName}
+        </Typography>,
+      );
+    }
   }
 
   // Append query parameters dynamically to the breadcrumb

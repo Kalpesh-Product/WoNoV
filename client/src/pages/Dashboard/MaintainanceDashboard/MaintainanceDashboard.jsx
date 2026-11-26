@@ -11,7 +11,7 @@ import DataCard from "../../../components/DataCard";
 import PieChartMui from "../../../components/graphs/PieChartMui";
 import DonutChart from "../../../components/graphs/DonutChart";
 import MuiTable from "../../../components/Tables/MuiTable";
-import { Box, Chip, Skeleton } from "@mui/material";
+import { Chip, Skeleton } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import BudgetGraph from "../../../components/graphs/BudgetGraph";
@@ -34,6 +34,7 @@ import {
   setSelectedDepartmentName,
 } from "../../../redux/slices/assetsSlice";
 import YearwiseEnergyBilling from "./MaintenanceMixBag/YearwiseEnergyBilling";
+import SalesDashboardChartSkeleton from "../SalesDashboard/SalesDashboardChartSkeleton";
 
 const MaintainanceDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
@@ -1423,6 +1424,7 @@ const MaintainanceDashboard = () => {
       key: PERMISSIONS.MAINTENANCE_OFFICES_UNDER_MANAGEMENT.value, // maintenance_offices_under_management
       title: "Total",
       data: Array.isArray(unitsData) ? unitsData.length : 0,
+      loading: isUnitsData,
       description: "Offices Under Management",
       route: "maintenance-offices",
     },
@@ -1430,6 +1432,7 @@ const MaintainanceDashboard = () => {
       key: PERMISSIONS.MAINTENANCE_MONTHLY_DUE_TASKS.value, // maintenance_monthly_due_tasks
       title: "Total",
       data: monthlyDueTasksCount,
+      loading: isTasksLoading,
       description: "Monthly Due Tasks",
       route: "/app/tasks",
     },
@@ -1437,6 +1440,7 @@ const MaintainanceDashboard = () => {
       key: PERMISSIONS.MAINTENANCE_MONTHLY_EXPENSE.value, // maintenance_monthly_expense
       title: "Average",
       data: `INR ${inrFormat(currentFyAverageMonthlyExpense)}`,
+      loading: isHrFinanceLoading,
       description: "Monthly Expense",
       route: "maintenance-expenses",
     },
@@ -1444,6 +1448,7 @@ const MaintainanceDashboard = () => {
       key: PERMISSIONS.MAINTENANCE_EXPENSE_PER_SQFT.value,
       title: "Total",
       data: `INR ${inrFormat(totalUtilised / totalSqFt)}`,
+      loading: isHrFinanceLoading || isUnitsData,
       description: "Expense per Sqft",
       route: "per-sq-ft-expense",
     },
@@ -1451,6 +1456,7 @@ const MaintainanceDashboard = () => {
       key: PERMISSIONS.MAINTENANCE_ASSETS_UNDER_MANAGEMENT.value,
       title: "Total",
       data: underMaintenanceAssetsCount,
+      loading: isMaintenanceAssetsLoading,
       description: "Assets Under Management",
       route: `/app/assets/view-assets/${encodedDepartmentName}/list-of-assets/assets-under-maintenance`,
       onClick: handleUnderMaintenanceAssetsClick,
@@ -1459,6 +1465,7 @@ const MaintainanceDashboard = () => {
       key: PERMISSIONS.MAINTENANCE_MONTHLY_KPA.value,
       title: "Total",
       data: departmentKra.length || 0,
+      loading: departmentLoading,
       description: "Monthly KPA",
       route: "/app/performance",
     },
@@ -1548,26 +1555,25 @@ const MaintainanceDashboard = () => {
     {
       layout: 1,
       widgets: [
-        <Suspense
-          fallback={
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {/* Simulating chart skeleton */}
-              <Skeleton variant="text" width={200} height={30} />
-              <Skeleton variant="rectangular" width="100%" height={300} />
-            </Box>
-          }
-        >
+        <Suspense fallback={<SalesDashboardChartSkeleton title="Maintenance Department Expense" />}>
           <WidgetSection normalCase layout={1} padding>
             {allowedMaintenanceYearlyGraphs.map((config) => (
-              <YearlyGraph
-                data={config.data}
-                responsiveResize
-                chartId={config.chartId}
-                options={config.options}
-                onYearChange={config.onYearChange}
-                title={config.title}
-                titleAmount={config.titleAmount}
-              />
+              isHrFinanceLoading ? (
+                <WidgetSection key={config.key} border title={config.title}>
+                  <SalesDashboardChartSkeleton title={config.title} />
+                </WidgetSection>
+              ) : (
+                <YearlyGraph
+                  key={config.key}
+                  data={config.data}
+                  responsiveResize
+                  chartId={config.chartId}
+                  options={config.options}
+                  onYearChange={config.onYearChange}
+                  title={config.title}
+                  titleAmount={config.titleAmount}
+                />
+              )
             ))}
           </WidgetSection>
         </Suspense>,
@@ -1623,14 +1629,22 @@ const MaintainanceDashboard = () => {
     {
       layout: 3,
       widgets: allowedMaintenanceDataCards.map((config) => (
-        <DataCard
-          key={config.key}
-          route={config.route}
-          title={config.title}
-          data={config.data}
-          description={config.description}
-          onClick={config.onClick}
-        />
+        config.loading ? (
+          <div key={config.key} className="min-w-0 rounded-lg border border-gray-200 bg-white p-5" role="status" aria-label={`Loading ${config.description}`}>
+            <Skeleton variant="text" width="55%" height={24} />
+            <Skeleton variant="text" width="35%" height={42} />
+            <Skeleton variant="text" width="70%" height={22} />
+          </div>
+        ) : (
+          <DataCard
+            key={config.key}
+            route={config.route}
+            title={config.title}
+            data={config.data}
+            description={config.description}
+            onClick={config.onClick}
+          />
+        )
       )),
     },
 
@@ -1654,7 +1668,7 @@ const MaintainanceDashboard = () => {
     {
       layout: 2,
       widgets: allowedMaintenanceTables.map((config) => (
-        <MuiTable showTableControls={false} {...config} />
+        <MuiTable key={config.key} showTableControls={false} {...config} loading={config.key === PERMISSIONS.MAINTENANCE_TOP_HIGH_PRIORITY_TASKS.value ? isTasksLoading : isWeeklyScheduleLoading} />
       )),
     },
 
@@ -1662,7 +1676,9 @@ const MaintainanceDashboard = () => {
       layout: allowedDueTasks.length,
       widgets: allowedDueTasks.map((config) => (
         <WidgetSection key={config.key} border title={config.title}>
-          {config.type === "PieChartMui" ? (
+          {isTasksLoading ? (
+            <SalesDashboardChartSkeleton circular title={config.title} />
+          ) : config.type === "PieChartMui" ? (
             <PieChartMui
               data={config.data}
               options={config.options}
@@ -1694,13 +1710,13 @@ const MaintainanceDashboard = () => {
               border={config.border}
               title={config.title}
             >
-              <PieChartMui
+              {isTicketsLoading ? <SalesDashboardChartSkeleton circular title={config.title} /> : <PieChartMui
                 data={config.data}
                 options={config.options}
                 width={config.width}
                 height={config.height}
                 centerAlign={config.centerAlign}
-              />
+              />}
             </WidgetSection>
           );
         } else if (config.type === "Donut") {
@@ -1710,12 +1726,12 @@ const MaintainanceDashboard = () => {
               border={config.border}
               title={config.title}
             >
-              <DonutChart
+              {isTicketsLoading ? <SalesDashboardChartSkeleton circular title={config.title} /> : <DonutChart
                 centerLabel={config.centerLabel}
                 labels={config.labels}
                 series={config.series}
                 tooltipValue={config.tooltipValue}
-              />
+              />}
             </WidgetSection>
           );
         }

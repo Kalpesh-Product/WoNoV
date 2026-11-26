@@ -1,3 +1,4 @@
+import AttachmentFilesInput from "../AttachmentFilesInput";
 import React, {
   useState,
   useMemo,
@@ -17,7 +18,6 @@ import {
   MenuItem,
   TextField,
   FormControl,
-  FormHelperText,
   Select,
 } from "@mui/material";
 import { DateRangePicker } from "react-date-range";
@@ -55,7 +55,6 @@ import {
   MdOutlineRemoveRedEye,
   MdOutlineRestore,
 } from "react-icons/md";
-import { LuImageUp } from "react-icons/lu";
 import { HiOutlineDotsHorizontal } from "react-icons/hi";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
@@ -124,113 +123,6 @@ const getBudgetInvoiceFiles = (budget) => {
       ...file,
       name: file.name || `Invoice ${index + 1}`,
     }));
-};
-
-const InvoiceFilesInput = ({ value = [], onChange, id }) => {
-  const files = useMemo(() => (Array.isArray(value) ? value : []), [value]);
-  const fileUrls = useMemo(
-    () =>
-      files.map((file) =>
-        file instanceof File
-          ? { url: URL.createObjectURL(file), shouldRevoke: true }
-          : { url: file.link || file.url || "", shouldRevoke: false },
-      ),
-    [files],
-  );
-
-  useEffect(
-    () => () => {
-      fileUrls.forEach(({ url, shouldRevoke }) => {
-        if (shouldRevoke) URL.revokeObjectURL(url);
-      });
-    },
-    [fileUrls],
-  );
-
-  const selectFiles = (event) => {
-    const selected = Array.from(event.target.files || []);
-    const availableSlots = 15 - files.length;
-    const withinLimit = selected.slice(0, Math.max(availableSlots, 0));
-    const validFiles = withinLimit.filter((file) => {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error(`${file.name} exceeds the 5 MB limit`);
-        return false;
-      }
-      return true;
-    });
-
-    if (selected.length > availableSlots) {
-      toast.error("You can attach a maximum of 15 files");
-    }
-    onChange([...files, ...validFiles]);
-    event.target.value = "";
-  };
-
-  return (
-    <div className="flex flex-col gap-2">
-      <input
-        type="file"
-        id={id}
-        accept=".jpg,.jpeg,.png,.webp,.gif,.bmp,.pdf,.doc,.docx,.xls,.xlsx,.csv"
-        multiple
-        hidden
-        onChange={selectFiles}
-      />
-      <TextField
-        size="small"
-        fullWidth
-        label="Upload Files"
-        value={files.length ? `${files.length} file(s) selected` : ""}
-        placeholder="Choose up to 15 files"
-        InputProps={{
-          readOnly: true,
-          endAdornment: (
-            <IconButton
-              component="label"
-              htmlFor={id}
-              color="primary"
-              disabled={files.length >= 15}
-            >
-              <LuImageUp />
-            </IconButton>
-          ),
-        }}
-      />
-      <FormHelperText>
-        Maximum 15 files, 5 MB each. Images, PDF, Word, Excel, and CSV.
-      </FormHelperText>
-      <div className="flex flex-wrap gap-2">
-        {files.map((file, index) => {
-          const fileName = file.name || `Invoice ${index + 1}`;
-          return (
-            <Chip
-              key={file.id || `${fileName}-${file.lastModified || index}`}
-              label={
-                fileName.length > 28
-                  ? `${fileName.slice(0, 20)}...${fileName.includes(".") ? fileName.slice(fileName.lastIndexOf(".")) : ""}`
-                  : fileName
-              }
-              title={fileName}
-              size="small"
-              variant="outlined"
-              color="primary"
-              onClick={() => {
-                if (fileUrls[index]?.url) {
-                  window.open(
-                    fileUrls[index].url,
-                    "_blank",
-                    "noopener,noreferrer",
-                  );
-                }
-              }}
-              onDelete={() => onChange(files.filter((_, i) => i !== index))}
-              sx={{ maxWidth: "100%" }}
-            />
-          );
-        })}
-      </div>
-    </div>
-  );
 };
 
 const AllocatedBudget = ({
@@ -1117,6 +1009,46 @@ const AllocatedBudget = ({
   );
 
   if (isLoading) {
+    if (annaualExpense) {
+      const expenseColumns = tableColumns.length
+        ? tableColumns
+        : [
+            { field: "srNo", width: 100 },
+            { field: "expanseName", flex: 1 },
+            { field: "expanseType", flex: 1 },
+            { field: "projectedAmount", flex: 1 },
+            { field: "actualAmount", flex: 1 },
+            { field: "dueDate", flex: 1 },
+            { field: "status", flex: 1 },
+          ];
+
+      return (
+        <WidgetSection title="Annual Expenses" border>
+          <div className="w-full min-w-0 space-y-4" aria-busy="true">
+            <div className="grid min-w-0 grid-cols-1 items-center gap-3 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+              <div className="h-10 w-full max-w-64 animate-pulse rounded-md bg-gray-100" />
+              <div className="flex items-center justify-center gap-2">
+                <div className="h-9 w-28 animate-pulse rounded-md bg-gray-100" />
+                <div className="h-9 w-28 animate-pulse rounded-md bg-gray-100" />
+                <div className="h-9 w-9 animate-pulse rounded-md bg-gray-100" />
+              </div>
+              <div className="h-9 w-20 animate-pulse rounded-md bg-gray-100 md:justify-self-end" />
+            </div>
+            <div className="min-w-0 overflow-hidden rounded-md">
+              <AgTable
+                data={[]}
+                columns={expenseColumns}
+                loading
+                showTableControls={false}
+                hideTitle
+                tableHeight={350}
+              />
+            </div>
+          </div>
+        </WidgetSection>
+      );
+    }
+
     return (
       <div className="w-full min-w-0 overflow-hidden rounded-lg border border-gray-200" aria-busy="true">
         <TableLoadingSkeleton columns={tableColumns.length ? tableColumns : Array.from({ length: 7 }, (_, index) => ({ field: `loading-${index}`, flex: 1 }))} />
@@ -1352,7 +1284,7 @@ const AllocatedBudget = ({
             //   />
             // )}
             render={({ field }) => (
-              <InvoiceFilesInput {...field} id="budget-invoice-upload" />
+              <AttachmentFilesInput {...field} id="budget-invoice-upload" />
             )}
           />
           <div className="text-right">
@@ -1656,7 +1588,7 @@ const AllocatedBudget = ({
               //   />
               // )}
               render={({ field }) => (
-                <InvoiceFilesInput {...field} id="edit-budget-invoice-upload" />
+                <AttachmentFilesInput {...field} id="edit-budget-invoice-upload" />
               )}
             />
           )}

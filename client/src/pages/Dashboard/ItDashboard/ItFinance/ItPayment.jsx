@@ -1,10 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  Checkbox,
-  CircularProgress,
-  FormControlLabel,
-  FormGroup,
-} from "@mui/material";
+import { Checkbox, FormControlLabel, FormGroup } from "@mui/material";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";

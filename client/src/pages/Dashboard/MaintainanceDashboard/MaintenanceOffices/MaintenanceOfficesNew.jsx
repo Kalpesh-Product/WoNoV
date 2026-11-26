@@ -6,6 +6,7 @@ import WidgetSection from "../../../../components/WidgetSection";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import NormalBarGraph from "../../../../components/graphs/NormalBarGraph";
 import { useNavigate } from "react-router-dom";
+import SalesDashboardChartSkeleton from "../../SalesDashboard/SalesDashboardChartSkeleton";
 
 const MaintenanceOfficesNew = () => {
   const axios = useAxiosPrivate();
@@ -37,6 +38,7 @@ const MaintenanceOfficesNew = () => {
       },
       enabled: activeUnits.length > 0,
     });
+  const isPageLoading = isUnitsLoading || (activeUnits.length > 0 && isOccupancyLoading);
 
   const inrFormat = (val) => val.toLocaleString("en-IN");
 
@@ -145,11 +147,12 @@ const MaintenanceOfficesNew = () => {
         title={"Maintenance Offices"}
         TitleAmount={`TOTAL OFFICES : ${activeUnits.length || 0}`}
       >
-        <NormalBarGraph data={barGraphSeries} options={expenseOptions} />
+        {isPageLoading ? <SalesDashboardChartSkeleton title="Maintenance Offices" /> : <NormalBarGraph data={barGraphSeries} options={expenseOptions} />}
       </WidgetSection>
 
       <PageFrame>
         <YearWiseTable
+          loading={isPageLoading}
           data={tableData}
           columns={columns}
           search

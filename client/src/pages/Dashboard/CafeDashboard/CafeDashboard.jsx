@@ -12,6 +12,7 @@ import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import usePageDepartment from "../../../hooks/usePageDepartment";
 import useUserPermissions from "../../../hooks/useUserPermissions";
 import { inrFormat } from "../../../utils/currencyFormat";
+import SalesDashboardChartSkeleton from "../SalesDashboard/SalesDashboardChartSkeleton";
 
 const getFiscalYearStart = (date) =>
   dayjs(date).month() >= 3 ? dayjs(date).year() : dayjs(date).year() - 1;
@@ -102,7 +103,7 @@ const CafeDashboard = () => {
     setIsSidebarOpen(true);
   }, [setIsSidebarOpen]);
 
-  const { data: budgets = [] } = useQuery({
+  const { data: budgets = [], isPending: isBudgetLoading } = useQuery({
     queryKey: ["cafe-dashboard-budget", department?._id],
     enabled: Boolean(department?._id),
     queryFn: async () => {
@@ -723,14 +724,18 @@ title: {
     <div className="p-4">
       {hasPermission(PERMISSIONS.CAFE_DEPARTMENT_EXPENSE.value) && (
         <div className="mb-6">
-          <YearlyGraph
-            chartId="bargraph-cafe-expense"
-            data={expenseSeries}
-            options={expenseOptions}
-            title="BIZ Nest CAFE DEPARTMENT EXPENSE"
-            titleAmount={`INR ${inrFormat(totalExpense)}`}
-            onYearChange={setSelectedFiscalYear}
-          />
+          {isBudgetLoading ? (
+            <SalesDashboardChartSkeleton title="CAFE Department Expense" />
+          ) : (
+            <YearlyGraph
+              chartId="bargraph-cafe-expense"
+              data={expenseSeries}
+              options={expenseOptions}
+              title="BIZ Nest CAFE DEPARTMENT EXPENSE"
+              titleAmount={`INR ${inrFormat(totalExpense)}`}
+              onYearChange={setSelectedFiscalYear}
+            />
+          )}
         </div>
       )}
       {cafeCards.length > 0 && (
