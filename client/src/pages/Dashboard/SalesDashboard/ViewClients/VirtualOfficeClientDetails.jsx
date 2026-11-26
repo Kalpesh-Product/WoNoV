@@ -1480,6 +1480,10 @@ const VirtualOfficeClientDetails = () => {
                             ) : (
                               <TextField
                                 {...field}
+                                disabled={
+                                  fieldKey === "openDesks" ||
+                                  fieldKey === "openDeskRate"
+                                }
                                 size="small"
                                 label={fieldKey
                                   .replace(/([A-Z])/g, " $1")

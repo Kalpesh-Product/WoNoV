@@ -856,6 +856,7 @@ const VirtualOfficeForm = () => {
                             size="small"
                             type="number"
                             label="Open Desks"
+                            disabled
                             fullWidth
                           />
                         )}
@@ -871,6 +872,7 @@ const VirtualOfficeForm = () => {
                             size="small"
                             type="number"
                             label="Open Desk Rate"
+                            disabled
                             fullWidth
                           />
                         )}
