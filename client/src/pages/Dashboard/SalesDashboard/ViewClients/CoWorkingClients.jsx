@@ -257,7 +257,7 @@ const CoWorkingClients = ({ clientSegment = "coworking" }) => {
               type="button"
               onClick={() => handleToggleClientStatus(params.data)}
               disabled={isThisStatusUpdating}
-              className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-wait disabled:opacity-80 ${
+              className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#4B4B4B] disabled:cursor-wait disabled:opacity-80 ${
                 isActive ? "bg-green-500" : "bg-gray-300"
               }`}
               role="switch"
@@ -276,14 +276,28 @@ const CoWorkingClients = ({ clientSegment = "coworking" }) => {
             <button
               type="button"
               onClick={() => handleClickRow(params.data)}
-              className="flex h-8 w-8 items-center justify-center text-black hover:text-primary"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-100 text-gray-700 transition-colors duration-200 hover:bg-gray-200 hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
               aria-label={`Edit ${params.data?.clientName || "client"}`}
               title="Edit"
             >
-              <HiPencilSquare size={26} />
+              <HiPencilSquare size={22} />
             </button>
             <ThreeDotMenu
               rowId={params.data?._id}
+              buttonSx={{
+                width: 36,
+                height: 36,
+                padding: 0,
+                border: "1px solid #e5e7eb",
+                borderRadius: "0.5rem",
+                backgroundColor: "#f3f4f6",
+                color: "#374151",
+                transition: "background-color 200ms, color 200ms",
+                "&:hover": {
+                  backgroundColor: "#e5e7eb",
+                  color: "#1E3D73",
+                },
+              }}
               menuItems={[
                 {
                   label: "View History",

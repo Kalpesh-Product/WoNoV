@@ -214,7 +214,7 @@ const AlternateClients = () => {
                 updateStatus({ id: client._id, isActive: !client.isActive })
               }
               disabled={!canManage || isStatusUpdating}
-              className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+              className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#4B4B4B] disabled:cursor-not-allowed disabled:opacity-40 ${
                 client.isActive ? "bg-green-500" : "bg-gray-300"
               }`}
               role="switch"
@@ -230,10 +230,10 @@ const AlternateClients = () => {
               type="button"
               onClick={() => openEditForm(client)}
               disabled={!canManage}
-              className="flex h-8 w-8 items-center justify-center text-black hover:text-primary disabled:opacity-40"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-100 text-gray-700 transition-colors duration-200 hover:bg-gray-200 hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-40"
               aria-label={`Edit ${client.clientName || "client"}`}
             >
-              <HiPencilSquare size={25} />
+              <HiPencilSquare size={22} />
             </button>
           </div>
         );
