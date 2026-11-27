@@ -225,15 +225,18 @@ const getUnpaidInvoiceRowsForMonth = (
         .map((client) => {
           const clientId = client._id;
           const template = templateByClient.get(`id:${String(clientId)}`) || {};
-          const noOfDesks =
-            Number(client.totalDesks) ||
+          const allocatedDesks =
             Number(client.cabinDesks || 0) + Number(client.openDesks || 0);
+          const noOfDesks =
+            allocatedDesks || Number(client.totalDesks) || 0;
           const baseRate =
             Number(client.ratePerCabinDesk) ||
             Number(client.ratePerOpenDesk) ||
             Number(template.deskRate) ||
             0;
           const annualIncrement = Number(client.annualIncrement) || 0;
+          const billingMultiplier =
+            client.billingFrequency === "Half-Yearly" ? 6 : 1;
           const startDate = dayjs(client.startDate);
           const yearsElapsed = startDate.isValid()
             ? Math.max(targetMonth.diff(startDate, "year"), 0)
@@ -250,7 +253,10 @@ const getUnpaidInvoiceRowsForMonth = (
             channel: client.bookingType || template.channel,
             noOfDesks: noOfDesks || template.noOfDesks || 0,
             deskRate: deskRate || template.deskRate || 0,
-            revenue: (noOfDesks || template.noOfDesks || 0) * (deskRate || template.deskRate || 0),
+            revenue:
+              (noOfDesks || template.noOfDesks || 0) *
+              (deskRate || template.deskRate || 0) *
+              billingMultiplier,
             annualIncrement: client.annualIncrement ?? template.annualIncrement,
             nextIncrementDate: client.nextIncrement || template.nextIncrementDate,
             rentDate: client.rentDate || template.rentDate,
@@ -932,7 +938,7 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false, clientSeg
               [
                 ...(field.value === "-" ? ["-"] : []),
                 ...(name === "billingFrequency"
-                  ? ["Yearly", "Monthly"]
+                  ? ["Yearly", "Monthly", "Half-Yearly"]
                   : ["Annual Client", "Flexy Desk Client"]),
               ].map((option) => (
                 <MenuItem key={option} value={option}>

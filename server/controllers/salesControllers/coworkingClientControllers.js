@@ -95,9 +95,9 @@ const createCoworkingClient = async (req, res, next) => {
       clientType,
     } = req.body;
 
-    if (!["Yearly", "Monthly"].includes(billingFrequency)) {
+    if (!["Yearly", "Monthly", "Half-Yearly"].includes(billingFrequency)) {
       throw new CustomError(
-        "Billing frequency must be Yearly or Monthly",
+        "Billing frequency must be Yearly, Monthly, or Half-Yearly",
         logPath,
         logAction,
         logSourceKey,
@@ -490,10 +490,10 @@ const updateCoworkingClient = async (req, res, next) => {
     } = req.body;
     if (
       billingFrequency !== undefined &&
-      !["Yearly", "Monthly"].includes(billingFrequency)
+      !["Yearly", "Monthly", "Half-Yearly"].includes(billingFrequency)
     ) {
       return res.status(400).json({
-        message: "Billing frequency must be Yearly or Monthly",
+        message: "Billing frequency must be Yearly, Monthly, or Half-Yearly",
       });
     }
 

@@ -129,7 +129,9 @@ const fetchCoworkingRevenueService = async ({
             : 0;
         const currentRate =
           baseRate * Math.pow(1 + annualIncrement / 100, yearsElapsed);
-        const computedRevenue = noOfDesks * currentRate;
+        const billingMultiplier =
+          client.billingFrequency === "Half-Yearly" ? 6 : 1;
+        const computedRevenue = noOfDesks * currentRate * billingMultiplier;
         const computedTotalTerm =
           startDate.isValid() &&
           endDate.isValid() &&

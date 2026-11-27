@@ -609,12 +609,12 @@ const ClientOnboarding = () => {
                           select
                           size="small"
                           label="Billing Frequency"
-                          disabled
                           error={!!errors.billingFrequency}
                           helperText={errors.billingFrequency?.message}
                           fullWidth
                         >
                           <MenuItem value="Monthly">Monthly</MenuItem>
+                          <MenuItem value="Half-Yearly">Half-Yearly</MenuItem>
                         </TextField>
                       )}
                     />
