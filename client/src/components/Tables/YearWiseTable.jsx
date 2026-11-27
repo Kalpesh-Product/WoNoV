@@ -56,6 +56,8 @@ const YearWiseTable = ({
   totalKey = "actualAmount",
   showDateNavigator = false,
   hideDateControls = false,
+  disableDateFilter = false,
+  filterOnlyAfterDateChange = false,
   dateRangePlaceholders = false,
   selectedDateLabel = "",
   selectedDate,
@@ -70,6 +72,7 @@ const YearWiseTable = ({
   taskExportDateTimeFormatting = false,
   preserveCurrentMonthRange = false,
   serverPagination = false,
+  clientPagination = false,
   paginationPageSize,
   paginationPage = 1,
   paginationTotal = 0,
@@ -124,6 +127,8 @@ const YearWiseTable = ({
   useEffect(() => {
     if (!dateColumn || showDateNavigator || isUserChangedRange) return; // ✅ skip if user manually changed or parent controls date navigation
     // if (!dateColumn || isUserChangedRange) return; // ✅ skip if user manually changed
+
+    if (disableDateFilter) return;
 
     if (initialDateRange) {
       setDateRange([
@@ -201,6 +206,7 @@ const YearWiseTable = ({
   }, [
     data,
     dateColumn,
+    disableDateFilter,
     initialDateRange,
     isUserChangedRange,
     preserveCurrentMonthRange,
@@ -226,8 +232,10 @@ const YearWiseTable = ({
 
   const filteredData = useMemo(() => {
     if (
+      disableDateFilter ||
       serverPagination ||
       !showTableControls ||
+      (filterOnlyAfterDateChange && !isUserChangedRange) ||
       (dateRangePlaceholders && !isUserChangedRange) ||
       showDateNavigator ||
       !activeDateField ||
@@ -238,7 +246,7 @@ const YearWiseTable = ({
     //if (!dateColumn || dateRange.length === 0 || !dateRange[0]) return data;
 
     return filterTableRows(data, { dateRange: dateRange[0], dateField: activeDateField });
-  }, [data, activeDateField, dateRange, serverPagination, showDateNavigator, dateRangePlaceholders, isUserChangedRange, showTableControls]);
+  }, [data, activeDateField, dateRange, disableDateFilter, filterOnlyAfterDateChange, serverPagination, showDateNavigator, dateRangePlaceholders, isUserChangedRange, showTableControls]);
   // }, [data, dateColumn, dateRange]);
 
   useEffect(() => {
@@ -638,6 +646,7 @@ const YearWiseTable = ({
             hideHeaderDivider={tableTitle ? false : undefined}
             isPagination={serverPagination}
             serverPagination={serverPagination}
+            clientPagination={clientPagination}
             paginationPageSize={paginationPageSize}
             paginationPage={paginationPage}
             paginationTotal={paginationTotal}

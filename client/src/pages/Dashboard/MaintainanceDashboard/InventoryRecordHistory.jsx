@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLocation, useParams } from "react-router-dom";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
@@ -12,7 +12,16 @@ import { inrFormat } from "../../../utils/currencyFormat";
 import formatDateTime from "../../../utils/formatDateTime";
 import { queryClient } from "../../../main";
 import { toast } from "sonner";
-import { MdDeleteForever, MdOutlineRestore } from "react-icons/md";
+import {
+  MdDeleteForever,
+  MdOutlineRemoveRedEye,
+  MdOutlineRestore,
+} from "react-icons/md";
+import {
+  DEFAULT_PAGE_SIZE,
+  PAGE_SIZE_OPTIONS,
+} from "../../../constants/pagination";
+import { filterTableRows } from "../../../utils/tableFilters";
 
 const normalizeUnitNo = (value) =>
   String(value || "")
@@ -27,6 +36,20 @@ const normalizeText = (value) =>
     .toLowerCase();
 
 const toTime = (value) => new Date(value || 0).getTime() || 0;
+
+const getHistoryConsumedValue = (inventory) =>
+  Number(
+    inventory?.consumedValue ??
+      inventory?.newConsumedUnitValue ??
+      inventory?.totalConsumed ??
+      inventory?.consumedNewPurchaseInventoryUnits ??
+      0,
+  );
+
+const getHistoryAddedValue = (inventory) =>
+  getHistoryConsumedValue(inventory) > 0
+    ? 0
+    : Number(inventory?.addedValue ?? inventory?.newPurchaseUnits ?? 0);
 
 const buildOverallHistoryKey = (item) =>
   [
@@ -55,6 +78,11 @@ const InventoryRecordHistory = () => {
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [inventoryAction, setInventoryAction] = useState(null);
+  const [historySearch, setHistorySearch] = useState("");
+  const [historyPagination, setHistoryPagination] = useState({
+    page: 1,
+    limit: DEFAULT_PAGE_SIZE,
+  });
 
   const decodedUnitNo = useMemo(
     () => (unitNo ? decodeURIComponent(unitNo) : ""),
@@ -392,76 +420,52 @@ const InventoryRecordHistory = () => {
       setIsViewModalOpen(true);
     };
 
-    const renderClickableItem = (params) => (
-      <span
-        role="button"
-        onClick={() => handleAssetClick(params)}
-        className="text-primary cursor-pointer underline"
-      >
-        {params.value || "N/A"}
-      </span>
-    );
-
-    const renderClickableBuilding = (params) => (
-      <span
-        role="button"
-        onClick={() => handleAssetClick(params)}
-        className="text-primary cursor-pointer underline"
-      >
-        {params.value || "N/A"}
-      </span>
-    );
-
     return [
-      { field: "srNo", headerName: "Sr. No", width: 110 },
+      { field: "srNo", headerName: "Sr No", width: 75 },
       ...(isOverallInventoryHistoryRoute
         ? [
             {
               field: "buildingName",
               headerName: "Building",
-              minWidth: 190,
-              flex: 1,
-              cellRenderer: renderClickableBuilding,
-            },
-            {
-              field: "remainingStock",
-              headerName: "Remaining Stock",
-              minWidth: 150,
-              flex: 1,
-              valueGetter: (params) =>
-                params.data.newRemainingUnitValue ??
-                params.data.remainingNewPurchaseInventoryUnits ??
-                params.data.remainingOpeningInventoryUnits ??
-                0,
-              cellRenderer: (params) => {
-                return inrFormat(params.value);
-              },
-            },
-            {
-              field: "addedByName",
-              headerName: "Assign by",
-              minWidth: 180,
-              flex: 1,
-            },
-            {
-              field: "unitNo",
-              headerName: "Assigned Unit",
-              minWidth: 170,
-              flex: 1,
-              cellRenderer: (params) => params.value || "-",
+              width: 145,
+              cellRenderer: (params) => params.value || "N/A",
             },
             {
               field: "categoryName",
               headerName: "Category",
-              flex: 1,
-              minWidth: 160,
+              width: 150,
             },
             {
               field: "itemName",
               headerName: "Item Name",
-              flex: 1,
-              minWidth: 180,
+              width: 150,
               cellRenderer: (params) => <span>{params.value || "N/A"}</span>,
+            },
+            {
+              field: "addedByName",
+              headerName: "Assign By",
+              width: 145,
+            },
+            {
+              field: "unitNo",
+              headerName: "Assign Unit",
+              width: 125,
+              cellRenderer: (params) => {
+                if (params.value) {
+                  return (
+                    <span className="text-red-600">{params.value}</span>
+                  );
+                }
+
+                const addedValue = getHistoryAddedValue(params.data);
+                return addedValue > 0 ? (
+                  <span style={{ color: "#00c16c" }}>
+                    {`Added +${addedValue}`}
+                  </span>
+                ) : (
+                  "-"
+                );
+              },
             },
             {
               field: "departmentName",
@@ -473,21 +477,18 @@ const InventoryRecordHistory = () => {
             {
               field: "itemName",
               headerName: "Item Name",
-              flex: 1,
-              minWidth: 180,
-              cellRenderer: renderClickableItem,
+              width: 150,
+              cellRenderer: (params) => params.value || "N/A",
             },
             {
               field: "categoryName",
               headerName: "Category",
-              flex: 1,
-              minWidth: 160,
+              width: 150,
             },
             {
               field: "addedByName",
               headerName: "Consumed By",
-              flex: 1,
-              minWidth: 180,
+              width: 150,
             },
           ]),
       ...(!isOverallInventoryHistoryRoute
@@ -518,7 +519,7 @@ const InventoryRecordHistory = () => {
         headerName: "Opening Units",
         flex: 1,
         minWidth: 150,
-        hide: !isOverallInventoryHistoryRoute,
+        hide: true,
         suppressCsvExport: !isOverallInventoryHistoryRoute,
         suppressExcelExport: !isOverallInventoryHistoryRoute,
         cellRenderer: (params) => inrFormat(params.value),
@@ -528,7 +529,7 @@ const InventoryRecordHistory = () => {
         headerName: "Opening Unit Price",
         flex: 1,
         minWidth: 180,
-        hide: !isOverallInventoryHistoryRoute,
+        hide: true,
         suppressCsvExport: !isOverallInventoryHistoryRoute,
         suppressExcelExport: !isOverallInventoryHistoryRoute,
       },
@@ -537,7 +538,7 @@ const InventoryRecordHistory = () => {
         headerName: "Opening Value",
         flex: 1,
         minWidth: 170,
-        hide: !isOverallInventoryHistoryRoute,
+        hide: true,
         suppressCsvExport: !isOverallInventoryHistoryRoute,
         suppressExcelExport: !isOverallInventoryHistoryRoute,
         cellRenderer: (params) => inrFormat(params.value),
@@ -545,18 +546,34 @@ const InventoryRecordHistory = () => {
       {
         field: "newPurchaseUnits",
         headerName: "New Purchases Unit",
-        flex: 1,
-        minWidth: 180,
+        width: 195,
         hide: !isOverallInventoryHistoryRoute,
         suppressCsvExport: !isOverallInventoryHistoryRoute,
         suppressExcelExport: !isOverallInventoryHistoryRoute,
+      },
+      {
+        field: "addedValue",
+        headerName: "Added Value",
+        width: 145,
+        hide: !isOverallInventoryHistoryRoute,
+        suppressCsvExport: !isOverallInventoryHistoryRoute,
+        suppressExcelExport: !isOverallInventoryHistoryRoute,
+        valueGetter: (params) => getHistoryAddedValue(params.data),
+        cellRenderer: (params) => {
+          const value = Number(params.value || 0);
+          return value > 0 ? (
+            <span style={{ color: "#00c16c" }}>{inrFormat(value)}</span>
+          ) : (
+            inrFormat(value)
+          );
+        },
       },
       {
         field: "newPurchasePerUnitPrice",
         headerName: "New Purchases Per Unit Price",
         flex: 1,
         minWidth: 230,
-        hide: !isOverallInventoryHistoryRoute,
+        hide: true,
         suppressCsvExport: !isOverallInventoryHistoryRoute,
         suppressExcelExport: !isOverallInventoryHistoryRoute,
         cellRenderer: (params) => inrFormat(params.value),
@@ -566,20 +583,38 @@ const InventoryRecordHistory = () => {
         headerName: "New Purchases Value",
         flex: 1,
         minWidth: 190,
-        hide: !isOverallInventoryHistoryRoute,
+        hide: true,
         suppressCsvExport: !isOverallInventoryHistoryRoute,
         suppressExcelExport: !isOverallInventoryHistoryRoute,
         cellRenderer: (params) => inrFormat(params.value),
       },
       {
         field: "consumedValue",
-        headerName: "Consumed Valued",
-        flex: 1,
-        minWidth: 170,
+        headerName: "Consumed Value",
+        width: 165,
         hide: !isOverallInventoryHistoryRoute,
         suppressCsvExport: !isOverallInventoryHistoryRoute,
         suppressExcelExport: !isOverallInventoryHistoryRoute,
-        valueGetter: (params) => params.data.newConsumedUnitValue ?? 0,
+        valueGetter: (params) => getHistoryConsumedValue(params.data),
+        cellRenderer: (params) => {
+          const value = Number(params.value || 0);
+          return value > 0 ? (
+            <span className="text-red-600">{inrFormat(value)}</span>
+          ) : (
+            inrFormat(value)
+          );
+        },
+      },
+      {
+        field: "remainingStock",
+        headerName: "Remaining Stock",
+        width: 170,
+        hide: !isOverallInventoryHistoryRoute,
+        valueGetter: (params) =>
+          params.data.newRemainingUnitValue ??
+          params.data.remainingNewPurchaseInventoryUnits ??
+          params.data.remainingOpeningInventoryUnits ??
+          0,
         cellRenderer: (params) => inrFormat(params.value),
       },
       ...(isOverallInventoryHistoryRoute
@@ -589,12 +624,14 @@ const InventoryRecordHistory = () => {
               headerName: "Closing Unit",
               flex: 1,
               minWidth: 150,
+              hide: true,
             },
           ]
         : []),
       {
         field: "lastRemainingUnitValue",
         headerName: "New Assigned Unit",
+        width: 190,
         hide: isOverallInventoryHistoryRoute,
         valueGetter: (params) => getUnitAssignedDisplayValue(params.data),
         cellRenderer: (params) => inrFormat(params.value),
@@ -604,6 +641,7 @@ const InventoryRecordHistory = () => {
       {
         field: "newConsumedUnitValue",
         headerName: "New Consumed Unit",
+        width: 195,
         hide: isOverallInventoryHistoryRoute,
         suppressCsvExport: isOverallInventoryHistoryRoute,
         suppressExcelExport: isOverallInventoryHistoryRoute,
@@ -611,6 +649,7 @@ const InventoryRecordHistory = () => {
       {
         field: "newRemainingUnitValue",
         headerName: "New Remaining Units",
+        width: 205,
         hide: isOverallInventoryHistoryRoute,
         suppressCsvExport: isOverallInventoryHistoryRoute,
         suppressExcelExport: isOverallInventoryHistoryRoute,
@@ -620,16 +659,14 @@ const InventoryRecordHistory = () => {
             {
               field: "remainingNewPurchaseInventoryUnits",
               headerName: "Closing Unit",
-              flex: 1,
-              minWidth: 150,
+              width: 140,
             },
           ]
         : []),
       {
         field: "inventoryStamp",
         headerName: "Date",
-        flex: 1,
-        minWidth: 160,
+        width: 170,
         cellRenderer: (params) => params.value,
       },
       {
@@ -639,6 +676,15 @@ const InventoryRecordHistory = () => {
         width: 120,
         cellRenderer: (params) => (
           <div className="flex h-full items-center gap-1">
+            <button
+              type="button"
+              aria-label="View inventory details"
+              title="View Details"
+              onClick={() => handleAssetClick(params)}
+              className="flex h-8 w-8 items-center justify-center text-gray-600 hover:text-primary"
+            >
+              <MdOutlineRemoveRedEye size={20} />
+            </button>
             {params.data.isDeleted && (
               <button
                 type="button"
@@ -699,6 +745,41 @@ const InventoryRecordHistory = () => {
     return uniqueCategories[0] || "Category";
   }, [historyRows, location.state?.inventoryCategory]);
 
+  const filteredHistoryRows = useMemo(
+    () => filterTableRows(historyRows, { search: historySearch }),
+    [historyRows, historySearch],
+  );
+
+  const paginatedHistoryRows = useMemo(() => {
+    const startIndex =
+      (historyPagination.page - 1) * historyPagination.limit;
+
+    return filteredHistoryRows
+      .slice(startIndex, startIndex + historyPagination.limit)
+      .map((row, index) => ({
+        ...row,
+        srNo: startIndex + index + 1,
+      }));
+  }, [filteredHistoryRows, historyPagination]);
+
+  useEffect(() => {
+    const lastPage = Math.max(
+      1,
+      Math.ceil(filteredHistoryRows.length / historyPagination.limit),
+    );
+
+    if (historyPagination.page > lastPage) {
+      setHistoryPagination((current) => ({
+        ...current,
+        page: lastPage,
+      }));
+    }
+  }, [
+    filteredHistoryRows.length,
+    historyPagination.limit,
+    historyPagination.page,
+  ]);
+
   const tableTitle = `${historyTitlePrefix} - ${
     decodedItemName || "Item"
   } - ${resolvedCategoryName}`;
@@ -708,11 +789,30 @@ const InventoryRecordHistory = () => {
       <PageFrame>
         <AgTable
           loading={isInventoryLoading}
-          data={historyRows}
+          data={paginatedHistoryRows}
           columns={columns}
           search={true}
+          serverSearch
+          searchValue={historySearch}
+          onSearchChange={(value) => {
+            setHistorySearch(value);
+            setHistoryPagination((current) => ({ ...current, page: 1 }));
+          }}
           tableTitle={tableTitle}
           tableHeight={450}
+          serverPagination
+          pageSizeOptions={PAGE_SIZE_OPTIONS}
+          paginationPageSize={historyPagination.limit}
+          paginationPage={historyPagination.page}
+          paginationTotal={filteredHistoryRows.length}
+          onPaginationPageChange={(page) =>
+            setHistoryPagination((current) => ({ ...current, page }))
+          }
+          onPaginationPageSizeChange={(limit) =>
+            setHistoryPagination((current) =>
+              current.limit === limit ? current : { page: 1, limit },
+            )
+          }
           getRowStyle={({ data }) =>
             data?.isDeleted
               ? {
@@ -834,8 +934,30 @@ const InventoryRecordHistory = () => {
               </div>
 
               <div>
+                <div className="font-bold mb-4">
+                  Consumption &amp; Added Value
+                </div>
+                <div className="space-y-4">
+                  <DetalisFormatted
+                    title="Consumed Value"
+                    detail={inrFormat(
+                      getHistoryConsumedValue(selectedAsset),
+                    )}
+                  />
+                  <DetalisFormatted
+                    title="Added Value"
+                    detail={inrFormat(getHistoryAddedValue(selectedAsset))}
+                  />
+                </div>
+              </div>
+
+              <div>
                 <div className="font-bold mb-4">Inventory Assigned By</div>
                 <div className="space-y-4">
+                  <DetalisFormatted
+                    title="Assign Unit"
+                    detail={selectedAsset.unitNo || "N/A"}
+                  />
                   <DetalisFormatted
                     title="Name"
                     detail={selectedAsset.addedByName || "N/A"}

@@ -31,8 +31,16 @@ import formatDateTime from "../../../utils/formatDateTime";
 import useAuth from "../../../hooks/useAuth";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import ConfirmationModal from "../../../components/ConfirmationModal";
-import { MdDeleteForever, MdOutlineRestore } from "react-icons/md";
+import {
+  MdDeleteForever,
+  MdOutlineRemoveRedEye,
+  MdOutlineRestore,
+} from "react-icons/md";
 import AdminLoadingSkeleton from "../AdminDashboard/AdminLoadingSkeleton";
+import {
+  DEFAULT_PAGE_SIZE,
+  PAGE_SIZE_OPTIONS,
+} from "../../../constants/pagination";
 
 const canManageDeletedCategories = (auth) =>
   (auth?.user?.departments || []).some(
@@ -94,6 +102,24 @@ function getUnitAssignedDisplayValue(inventory) {
 
   const assignedValue = currentRemaining - previousRemaining;
   return assignedValue > 0 ? assignedValue : currentRemaining || 0;
+}
+
+function getInventoryConsumedValue(inventory) {
+  return Number(
+    inventory?.consumedValue ??
+      inventory?.newConsumedUnitValue ??
+      inventory?.totalConsumed ??
+      inventory?.consumedNewPurchaseInventoryUnits ??
+      0,
+  );
+}
+
+function getInventoryAddedValue(inventory) {
+  if (getInventoryConsumedValue(inventory) > 0) return 0;
+
+  return Number(
+    inventory?.addedValue ?? inventory?.newPurchaseUnits ?? 0,
+  );
 }
 
 function getUnitInventorySummaryValues(rows = []) {
@@ -1760,32 +1786,25 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
     {
       field: "id",
       headerName: "Sr No",
-      width: 100,
+      width: 75,
       valueGetter: (params) => params.node.rowIndex + 1,
     },
     {
       field: "itemName",
       headerName: "Item Name",
-      cellRenderer: (params) => (
-        <span
-          role="button"
-          onClick={() => {
-            handleDetailsClick(params.data);
-          }}
-          className="text-primary cursor-pointer underline"
-        >
-          {params.value || "-"}
-        </span>
-      ),
+      width: 150,
+      cellRenderer: (params) => params.value || "-",
     },
     {
       field: "categoryName",
       headerName: "Category",
+      width: 150,
       cellRenderer: (params) => params.value,
     },
     {
       field: "addedByName",
       headerName: "Added By",
+      width: 150,
       cellRenderer: (params) => params.value || "-",
     },
     {
@@ -1798,6 +1817,7 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
     {
       field: "buildingName",
       headerName: "Building",
+      width: 145,
       hide: true,
       suppressCsvExport: true,
       suppressExcelExport: true,
@@ -1812,6 +1832,7 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
     {
       field: "lastRemainingUnitValue",
       headerName: "New Assigned Unit",
+      width: 190,
       hide: inventoryRootView === "overall",
       valueGetter: (params) => getUnitAssignedDisplayValue(params.data),
       cellRenderer: (params) => inrFormat(params.value),
@@ -1819,11 +1840,13 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
     {
       field: "newConsumedUnitValue",
       headerName: "New Consumed Unit",
+      width: 195,
       hide: inventoryRootView === "overall",
     },
     {
       field: "newRemainingUnitValue",
       headerName: "New Remaining Units",
+      width: 205,
       hide: inventoryRootView === "overall",
     },
     // {
@@ -1839,6 +1862,7 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
     {
       field: "closingUnits",
       headerName: "Closing Units",
+      width: 140,
       valueGetter: (params) =>
         params.data.newRemainingUnitValue ??
         params.data.remainingNewPurchaseInventoryUnits ??
@@ -1851,6 +1875,7 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
     {
       field: "dateRaw",
       headerName: "Date",
+      width: 170,
       exportFormat: "datetime-comma",
       cellRenderer: (params) => {
         return formatDateTime(params.value);
@@ -1860,37 +1885,51 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
       field: "actions",
       headerName: "Actions",
       pinned: "right",
+      width: 100,
+      minWidth: 100,
+      maxWidth: 100,
       cellRenderer: (params) => (
-        <ThreeDotMenu
-          rowId={params.data._id}
-          menuItems={[
-            {
-              label: inventoryRootView === "overall" ? "Assign" : "Edit",
-              onClick: () => {
-                setSelectedAsset(params.data);
-                setModalMode("edit");
-                setIsModalOpen(true);
+        <div className="flex h-full items-center gap-1">
+          <button
+            type="button"
+            title="View Details"
+            aria-label="View inventory details"
+            className="p-1 text-gray-600 hover:text-primary"
+            onClick={() => handleDetailsClick(params.data)}
+          >
+            <MdOutlineRemoveRedEye size={20} />
+          </button>
+          <ThreeDotMenu
+            rowId={params.data._id}
+            menuItems={[
+              {
+                label: inventoryRootView === "overall" ? "Assign" : "Edit",
+                onClick: () => {
+                  setSelectedAsset(params.data);
+                  setModalMode("edit");
+                  setIsModalOpen(true);
+                },
               },
-            },
-            {
-              label: "View Records",
-              onClick: () => {
-                const currentPath = location.pathname.endsWith("/")
-                  ? location.pathname.slice(0, -1)
-                  : location.pathname;
-                const recordPath = `${currentPath}/${encodeURIComponent(
-                  params.data.itemName,
-                )}`;
-                navigate(recordPath, {
-                  state: {
-                    inventoryCategory: params.data.categoryName || "",
-                    buildingName: params.data.buildingName || "",
-                  },
-                });
+              {
+                label: "View Records",
+                onClick: () => {
+                  const currentPath = location.pathname.endsWith("/")
+                    ? location.pathname.slice(0, -1)
+                    : location.pathname;
+                  const recordPath = `${currentPath}/${encodeURIComponent(
+                    params.data.itemName,
+                  )}`;
+                  navigate(recordPath, {
+                    state: {
+                      inventoryCategory: params.data.categoryName || "",
+                      buildingName: params.data.buildingName || "",
+                    },
+                  });
+                },
               },
-            },
-          ]}
-        />
+            ]}
+          />
+        </div>
       ),
     },
   ];
@@ -1905,17 +1944,88 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
     {
       field: "buildingName",
       headerName: "Building",
-      cellRenderer: (params) => (
-        <span
-          role="button"
-          onClick={() => {
-            handleDetailsClick(params.data);
-          }}
-          className="text-primary cursor-pointer underline"
-        >
-          {params.value || "-"}
-        </span>
-      ),
+      cellRenderer: (params) => params.value || "-",
+    },
+    {
+      field: "categoryName",
+      headerName: "Category",
+      width: 160,
+      cellRenderer: (params) => params.value,
+    },
+    {
+      field: "itemName",
+      headerName: "Item Name",
+      width: 160,
+      cellRenderer: (params) => <span>{params.value || "-"}</span>,
+    },
+    {
+      field: "addedByName",
+      headerName: "Added By",
+      width: 150,
+    },
+    {
+      field: "openingInventoryUnits",
+      headerName: "Opening Unit",
+      width: 130,
+      cellRenderer: (params) => inrFormat(params.value),
+    },
+    {
+      field: "newPurchaseUnits",
+      headerName: "New Purchases Unit",
+      width: 195,
+      cellRenderer: (params) => inrFormat(params.value),
+    },
+    {
+      field: "addedValue",
+      headerName: "Added Value",
+      width: 145,
+      valueGetter: (params) => getInventoryAddedValue(params.data),
+      cellRenderer: (params) => {
+        const value = Number(params.value || 0);
+
+        return value > 0 ? (
+          <span style={{ color: "#00c16c" }}>
+            Added + {inrFormat(value)}
+          </span>
+        ) : (
+          <span style={{ color: "#00c16c" }}>0</span>
+        );
+      },
+    },
+    {
+      field: "consumedValue",
+      headerName: "Consumed Value",
+      width: 165,
+      valueGetter: (params) => getInventoryConsumedValue(params.data),
+      cellRenderer: (params) => {
+        const value = Number(params.value || 0);
+
+        return value > 0 ? (
+          <span className="text-red-600">
+            Assign + {inrFormat(value)}
+          </span>
+        ) : (
+          <span className="text-red-600">0</span>
+        );
+      },
+    },
+    {
+      field: "remainingStock",
+      headerName: "Remaining Stock",
+      width: 170,
+      valueGetter: (params) =>
+        params.data.newRemainingUnitValue ??
+        params.data.remainingNewPurchaseInventoryUnits ??
+        params.data.remainingOpeningInventoryUnits ??
+        0,
+      cellRenderer: (params) => inrFormat(params.value),
+    },
+    {
+      field: "dateRaw",
+      headerName: "Date",
+      width: 170,
+      exportFormat: "datetime-comma",
+      cellRenderer: (params) => formatDateTime(params.value),
     },
     {
       field: "departmentName",
@@ -1923,70 +2033,33 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
       hide: true,
     },
     {
-      headerName: "Remaining Stock",
-      cellRenderer: (params) => {
-        const value =
-          params.data.newRemainingUnitValue ??
-          params.data.remainingNewPurchaseInventoryUnits ??
-          params.data.remainingOpeningInventoryUnits ??
-          0;
-
-        return inrFormat(value);
-      },
-    },
-    {
-      field: "addedByName",
-      headerName: "Added By",
-    },
-    {
-      field: "categoryName",
-      headerName: "Category",
-      cellRenderer: (params) => params.value,
-    },
-    {
-      field: "itemName",
-      headerName: "Item Name",
-      cellRenderer: (params) => <span>{params.value || "-"}</span>,
-    },
-    {
-      field: "openingInventoryUnits",
-      headerName: "Opening Units",
-      cellRenderer: (params) => inrFormat(params.value),
-    },
-    {
       field: "openingPerUnitPrice",
       headerName: "Opening Per Unit Price",
+      hide: true,
       cellRenderer: (params) => inrFormat(params.value),
     },
     {
       field: "openingInventoryValue",
       headerName: "Opening Value (INR)",
-      cellRenderer: (params) => inrFormat(params.value),
-    },
-    {
-      field: "newPurchaseUnits",
-      headerName: "New Purchase Units",
+      hide: true,
       cellRenderer: (params) => inrFormat(params.value),
     },
     {
       field: "newPurchasePerUnitPrice",
       headerName: "New Purchase Per Unit Price",
+      hide: true,
       cellRenderer: (params) => inrFormat(params.value),
     },
     {
       field: "newPurchaseInventoryValue",
       headerName: "New Purchase Value (INR)",
-      cellRenderer: (params) => inrFormat(params.value),
-    },
-    {
-      field: "consumedValue",
-      headerName: "Consumed Valued",
-      valueGetter: (params) => params.data.newConsumedUnitValue ?? 0,
+      hide: true,
       cellRenderer: (params) => inrFormat(params.value),
     },
     {
       field: "closingUnits",
       headerName: "Closing Units",
+      hide: true,
       valueGetter: (params) =>
         params.data.newRemainingUnitValue ??
         params.data.remainingNewPurchaseInventoryUnits ??
@@ -1995,66 +2068,76 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
       cellRenderer: (params) => inrFormat(params.value),
     },
     {
-      field: "dateRaw",
-      headerName: "Date",
-      exportFormat: "datetime-comma",
-      cellRenderer: (params) => formatDateTime(params.value),
-    },
-    {
       field: "actions",
       headerName: "Actions",
       pinned: "right",
+      width: 100,
+      minWidth: 100,
+      maxWidth: 100,
       cellRenderer: (params) => (
-        <ThreeDotMenu
-          rowId={params.data._id}
-          menuItems={[
-            ...(!overallBuildingTab
-              ? [
-                  {
-                    label: "Edit",
-                    onClick: () => handleEditInventory(params.data),
-                  },
-                ]
-              : []),
-            {
-              label: "Assign",
-              onClick: () => {
-                const recordBuildingName = normalizeBuildingName(
-                  params.data?.buildingName || "",
-                );
-                const matchingBuildingTab = tabOptions.find((tab) =>
-                  tab.buildingAliases.some((alias) =>
-                    recordBuildingName.includes(normalizeBuildingName(alias)),
-                  ),
-                );
+        <div className="flex h-full items-center gap-1">
+          <button
+            type="button"
+            title="View Details"
+            aria-label="View inventory details"
+            className="p-1 text-gray-600 hover:text-primary"
+            onClick={() => handleDetailsClick(params.data)}
+          >
+            <MdOutlineRemoveRedEye size={20} />
+          </button>
+          <ThreeDotMenu
+            rowId={params.data._id}
+            menuItems={[
+              ...(!overallBuildingTab
+                ? [
+                    {
+                      label: "Edit",
+                      onClick: () => handleEditInventory(params.data),
+                    },
+                  ]
+                : []),
+              {
+                label: "Assign",
+                onClick: () => {
+                  const recordBuildingName = normalizeBuildingName(
+                    params.data?.buildingName || "",
+                  );
+                  const matchingBuildingTab = tabOptions.find((tab) =>
+                    tab.buildingAliases.some((alias) =>
+                      recordBuildingName.includes(
+                        normalizeBuildingName(alias),
+                      ),
+                    ),
+                  );
 
-                if (matchingBuildingTab) {
-                  setSelectedBuildingTab(matchingBuildingTab.key);
-                }
-                setSelectedAsset(params.data);
-                setModalMode("assign");
-                setIsModalOpen(true);
+                  if (matchingBuildingTab) {
+                    setSelectedBuildingTab(matchingBuildingTab.key);
+                  }
+                  setSelectedAsset(params.data);
+                  setModalMode("assign");
+                  setIsModalOpen(true);
+                },
               },
-            },
-            {
-              label: "View Records",
-              onClick: () => {
-                const currentPath = location.pathname.endsWith("/")
-                  ? location.pathname.slice(0, -1)
-                  : location.pathname;
-                const recordPath = `${currentPath}/${encodeURIComponent(
-                  params.data.itemName,
-                )}`;
-                navigate(recordPath, {
-                  state: {
-                    inventoryCategory: params.data.categoryName || "",
-                    buildingName: params.data.buildingName || "",
-                  },
-                });
+              {
+                label: "View Records",
+                onClick: () => {
+                  const currentPath = location.pathname.endsWith("/")
+                    ? location.pathname.slice(0, -1)
+                    : location.pathname;
+                  const recordPath = `${currentPath}/${encodeURIComponent(
+                    params.data.itemName,
+                  )}`;
+                  navigate(recordPath, {
+                    state: {
+                      inventoryCategory: params.data.categoryName || "",
+                      buildingName: params.data.buildingName || "",
+                    },
+                  });
+                },
               },
-            },
-          ]}
-        />
+            ]}
+          />
+        </div>
       ),
     },
   ];
@@ -2684,11 +2767,15 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
             data={overallInventoryRows}
             tableHeight={450}
             dateColumn={"date"}
+            filterOnlyAfterDateChange
             columns={overallInventoryColumns}
             handleSubmit={handleAddAsset}
             exportData
             exportAllColumns={true}
             taskExportDateTimeFormatting
+            clientPagination
+            pageSizeOptions={PAGE_SIZE_OPTIONS}
+            paginationPageSize={DEFAULT_PAGE_SIZE}
           />
         </PageFrame>
       )}
@@ -2728,6 +2815,9 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
             handleClick={handleOpenAddItemModal}
             tableHeight={450}
             exportData
+            clientPagination
+            pageSizeOptions={PAGE_SIZE_OPTIONS}
+            paginationPageSize={DEFAULT_PAGE_SIZE}
             getRowStyle={({ data }) =>
               data?.isDeleted
                 ? {
@@ -2845,6 +2935,9 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
                   exportData
                   exportAllColumns={false}
                   taskExportDateTimeFormatting
+                  clientPagination
+                  pageSizeOptions={PAGE_SIZE_OPTIONS}
+                  paginationPageSize={DEFAULT_PAGE_SIZE}
                 />
               </PageFrame>
             </>
@@ -3709,6 +3802,24 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
                       inrFormat(selectedAsset.newPurchaseInventoryValue) ??
                       "N/A"
                     }`}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="font-bold mb-4">
+                  Consumption &amp; Added Value
+                </div>
+                <div className="space-y-4">
+                  <DetalisFormatted
+                    title="Consumed Value"
+                    detail={inrFormat(
+                      getInventoryConsumedValue(selectedAsset),
+                    )}
+                  />
+                  <DetalisFormatted
+                    title="Added Value"
+                    detail={inrFormat(getInventoryAddedValue(selectedAsset))}
                   />
                 </div>
               </div>

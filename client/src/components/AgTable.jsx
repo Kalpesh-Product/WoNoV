@@ -102,6 +102,7 @@ const AgTableComponent = React.memo(
     selectionResetKey,
     isPagination = false,
     serverPagination,
+    clientPagination = false,
     paginationPage = 1,
     paginationTotal = 0,
     onPaginationPageChange,
@@ -122,6 +123,10 @@ const AgTableComponent = React.memo(
       Boolean(!hideTitle && tableTitle),
     );
     const [searchQuery, setSearchQuery] = useState("");
+    const [clientPaginationPage, setClientPaginationPage] = useState(1);
+    const [clientPaginationPageSize, setClientPaginationPageSize] = useState(
+      paginationPageSize || pageSizeOptions?.[0] || 25,
+    );
     const [tableDateRange, setTableDateRange] = useState(null);
     const [chosenDateField, setChosenDateField] = useState("");
     const dateFields = useMemo(
@@ -242,6 +247,32 @@ const AgTableComponent = React.memo(
       ],
     );
 
+    const clientPaginatedData = useMemo(() => {
+      if (!clientPagination) return filteredData;
+
+      const startIndex =
+        (clientPaginationPage - 1) * clientPaginationPageSize;
+      return filteredData.slice(
+        startIndex,
+        startIndex + clientPaginationPageSize,
+      );
+    }, [
+      clientPagination,
+      clientPaginationPage,
+      clientPaginationPageSize,
+      filteredData,
+    ]);
+
+    useEffect(() => {
+      if (!clientPagination) return;
+
+      const lastPage = Math.max(
+        1,
+        Math.ceil(filteredData.length / clientPaginationPageSize),
+      );
+      setClientPaginationPage((current) => Math.min(current, lastPage));
+    }, [clientPagination, clientPaginationPageSize, filteredData.length]);
+
     const selectedRowCountText = useMemo(() => {
       if (!showSelectedRowCount) return "";
       if (!selectedRowCountGroupField) return String(selectedRows.length);
@@ -301,6 +332,7 @@ const AgTableComponent = React.memo(
       const rawQuery = event.target.value;
       const query = rawQuery.toLowerCase();
       setSearchQuery(query);
+      if (clientPagination) setClientPaginationPage(1);
       if (serverSearch) {
         onSearchChange?.(rawQuery);
         return;
@@ -352,6 +384,7 @@ const AgTableComponent = React.memo(
           : filters;
 
       setAppliedFilters(safeFilters);
+      if (clientPagination) setClientPaginationPage(1);
       setFilterDrawerOpen(false);
     };
 
@@ -360,12 +393,14 @@ const AgTableComponent = React.memo(
       delete updatedFilters[field];
       setFilters(updatedFilters);
       setAppliedFilters(updatedFilters);
+      if (clientPagination) setClientPaginationPage(1);
     };
 
     const clearFilters = () => {
       setFilters({});
       setAppliedFilters({});
       setSearchQuery("");
+      if (clientPagination) setClientPaginationPage(1);
       if (serverSearch) onSearchChange?.("");
       setTableDateRange(null);
     };
@@ -749,11 +784,11 @@ const AgTableComponent = React.memo(
           ) : (
           <AgGridReact
             ref={setGridInstance}
-            rowData={filteredData}
+            rowData={clientPaginatedData}
             getRowId={getRowId}
             columnDefs={modifiedColumns} // ✅ Use modified columns with checkboxes
             defaultColDef={defaultColDef}
-            pagination={isPagination && !serverPagination}
+            pagination={isPagination && !serverPagination && !clientPagination}
             isRowSelectable={isRowSelectable}
             tooltipShowDelay={checkboxTooltip ? 300 : undefined}
             paginationPageSize={paginationPageSize}
@@ -814,6 +849,55 @@ const AgTableComponent = React.memo(
               page={paginationPage}
               count={Math.ceil(paginationTotal / effectivePageSize)}
               onChange={(_, nextPage) => onPaginationPageChange?.(nextPage)}
+              color="primary"
+              showFirstButton
+              showLastButton
+            />
+          </div>
+        )}
+        {clientPagination && filteredData.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 px-2 py-4">
+            <div className="flex flex-wrap items-center gap-3">
+              {pageSizeOptions?.length > 0 && (
+                <TextField
+                  select
+                  size="small"
+                  value={clientPaginationPageSize}
+                  onChange={(event) => {
+                    setClientPaginationPageSize(Number(event.target.value));
+                    setClientPaginationPage(1);
+                  }}
+                  sx={{
+                    minWidth: 88,
+                    "& .MuiOutlinedInput-input": {
+                      py: 1,
+                    },
+                  }}
+                >
+                  {pageSizeOptions.map((option) => (
+                    <MenuItem key={option} value={option}>
+                      {option}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+
+              <span className="font-pregular text-sm text-gray-600">
+                {`${
+                  (clientPaginationPage - 1) * clientPaginationPageSize + 1
+                }-${Math.min(
+                  clientPaginationPage * clientPaginationPageSize,
+                  filteredData.length,
+                )} of ${filteredData.length}`}
+              </span>
+            </div>
+
+            <Pagination
+              page={clientPaginationPage}
+              count={Math.ceil(
+                filteredData.length / clientPaginationPageSize,
+              )}
+              onChange={(_, nextPage) => setClientPaginationPage(nextPage)}
               color="primary"
               showFirstButton
               showLastButton
