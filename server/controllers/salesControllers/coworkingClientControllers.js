@@ -640,7 +640,9 @@ const updateCoworkingClient = async (req, res, next) => {
     }
 
     // 🔥 DESK ADJUSTMENT LOGIC
-    const oldBookedDesks = existingClient.totalDesks;
+    const oldBookedDesks =
+      Number(existingClient.cabinDesks || 0) +
+      Number(existingClient.openDesks || 0);
     const deskDifference = newBookedDesks - oldBookedDesks;
 
     const now = new Date();
@@ -650,27 +652,29 @@ const updateCoworkingClient = async (req, res, next) => {
     const startOfMonth = new Date(year, month, 1);
     const endOfMonth = new Date(year, month + 1, 1);
 
-    const deskRecord = await Desk.findOne({
-      unit: unit || existingClient.unit,
-      month: { $gte: startOfMonth, $lt: endOfMonth },
-    });
+    if (deskDifference !== 0) {
+      const deskRecord = await Desk.findOne({
+        unit: unit || existingClient.unit,
+        month: { $gte: startOfMonth, $lt: endOfMonth },
+      });
 
-    if (deskRecord) {
-      const updatedBooked = deskRecord.bookedDesks + deskDifference;
+      if (deskRecord) {
+        const updatedBooked = deskRecord.bookedDesks + deskDifference;
 
-      if (updatedBooked < 0) {
-        throw new CustomError(
-          "Desk calculation error",
-          logPath,
-          logAction,
-          logSourceKey,
-        );
+        if (updatedBooked < 0) {
+          throw new CustomError(
+            "Desk calculation error",
+            logPath,
+            logAction,
+            logSourceKey,
+          );
+        }
+
+        deskRecord.bookedDesks = updatedBooked;
+        deskRecord.availableDesks = deskRecord.availableDesks - deskDifference;
+
+        await deskRecord.save();
       }
-
-      deskRecord.bookedDesks = updatedBooked;
-      deskRecord.availableDesks = deskRecord.availableDesks - deskDifference;
-
-      await deskRecord.save();
     }
 
     // ✅ Whitelist update
