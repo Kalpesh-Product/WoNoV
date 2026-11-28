@@ -69,6 +69,14 @@ const meetingSchema = new mongoose.Schema(
     creditsUsed: {
       type: Number,
     },
+    creditsExceeded: Boolean,
+    // Read legacy bookings until their credit flag is rewritten.
+    toPay: Boolean,
+    overageCredits: Number,
+    creditOverages: {
+      type: [{ _id: false, monthStart: Date, credits: Number }],
+      default: undefined,
+    },
     paymentBaseAmount: {
       type: Number,
     },

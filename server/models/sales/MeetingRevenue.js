@@ -43,6 +43,18 @@ const meetingClientRevenueSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Meeting",
     },
+    meetingIds: {
+      type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Meeting" }],
+      default: undefined,
+    },
+    meetingRangeStart: Date,
+    meetingRangeEndExclusive: Date,
+    discount: Number,
+    paymentProof: {
+      name: String,
+      link: String,
+      id: String,
+    },
     taxable: {
       type: Number,
       // required: true,
@@ -72,6 +84,10 @@ const meetingClientRevenueSchema = new mongoose.Schema(
     invoiceUploadedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserData",
+    },
+    paymentVerification: {
+      type: String,
+      enum: ["Pending", "Under Review", "Verified", "Completed"],
     },
     financeStatus: {
       type: String,

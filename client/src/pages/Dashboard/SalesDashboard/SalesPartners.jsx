@@ -141,14 +141,14 @@ const validatePartnerForm = (form, kind, existingRows, editingRow = null) => {
   ].includes(form.presentation.type))) errors.presentation = "Use a PDF or PowerPoint file up to 10 MB.";
   const emailChanged = !editingRow || String(editingRow.email || "").trim().toLowerCase() !== email;
   if (emailChanged && !errors.email && existingRows.some((row) => String(row.email || "").trim().toLowerCase() === email)) {
-    errors.email = "This email already has an enquiry in this tab.";
+    errors.email = "Email already exists.";
   }
   const phoneField = kind === "partnership" ? "mobile" : "phone";
   const phone = normalizePhone(form[phoneField]);
   const phoneChanged = !editingRow || normalizePhone(editingRow[phoneField]) !== phone;
   if (phoneChanged && phone && !errors[phoneField] && existingRows.some((row) =>
     normalizePhone(row.phone || row.mobile) === phone)) {
-    errors[phoneField] = "This phone number already has an enquiry in this tab.";
+    errors[phoneField] = "Phone number already exists.";
   }
   if (isWebsiteRow(editingRow)) {
     return Object.fromEntries(Object.entries(errors).filter(([field]) =>

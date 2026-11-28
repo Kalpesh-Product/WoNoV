@@ -1,3 +1,4 @@
+const MeetingRevenue = require("../../models/sales/MeetingRevenue");
 const Meeting = require("../../models/meetings/Meetings");
 const Review = require("../../models/meetings/Reviews");
 const UserData = require("../../models/hr/UserData");
@@ -383,10 +384,12 @@ const fetchMeetingReportService = async ({
   calendar = false,
   includeTotal = false,
   includeReviews = false,
+  includeInternalPaymentRevenue = false,
   page,
   limit,
   search,
   searchContext,
+  clientId,
 }) => {
   try {
     const {
@@ -522,6 +525,7 @@ const fetchMeetingReportService = async ({
 
     const meetingQuery = {
       company,
+      ...(clientId && { client: clientId }),
       ...(["internal", "external"].includes(meetingTypeFilter) && {
         meetingType:
           meetingTypeFilter.charAt(0).toUpperCase() +
@@ -577,7 +581,7 @@ const fetchMeetingReportService = async ({
 
     let meetingsQuery = Meeting.find(meetingQuery)
       .select(
-        "bookedBy clientBookedBy externalBookedBy receptionist bookedRoom startDate endDate startTime endTime extendTime bookingPeriod bookingSlots completedAt completedBy meetingType credits creditsUsed paymentBaseAmount paymentGstAmount paymentAmount paymentStatus paymentMode paymentProof paymentVerification internalParticipants clientParticipants externalParticipants agenda subject reason status client externalClient company housekeepingChecklist houeskeepingStatus discountAmount extend",
+        "bookedBy clientBookedBy externalBookedBy receptionist bookedRoom startDate endDate startTime endTime extendTime bookingPeriod bookingSlots updatedAt completedAt completedBy meetingType credits creditsUsed creditsExceeded toPay overageCredits creditOverages paymentBaseAmount paymentGstAmount paymentAmount paymentStatus paymentMode paymentProof paymentVerification internalParticipants clientParticipants externalParticipants agenda subject reason status client externalClient company housekeepingChecklist houeskeepingStatus discountAmount extend",
       )
       .populate({ path: "company", select: "meetingCreditBalance" })
       .populate({
@@ -673,6 +677,30 @@ const fetchMeetingReportService = async ({
     const getMeetingReview = (meeting) =>
       reviewsByMeetingId[meeting._id?.toString()] || [];
 
+    const paymentRevenueByMeeting = new Map();
+    if (includeInternalPaymentRevenue) {
+      const ids = meetings.filter((meeting) => meeting.meetingType === "Internal" && meeting.paymentStatus === true)
+        .map((meeting) => meeting._id);
+      if (ids.length) {
+        const revenues = await MeetingRevenue.find({
+          company, status: "Paid", $or: [{ meetingIds: { $in: ids } }, { meeting: { $in: ids } }],
+        }).select("meeting meetingIds paymentVerification totalAmount paymentProof").lean();
+        for (const revenue of revenues) {
+          const linkedIds = revenue.meetingIds?.length ? revenue.meetingIds : [revenue.meeting];
+          for (const id of linkedIds) {
+            const key = String(id);
+            if (!revenue.meetingIds?.length && paymentRevenueByMeeting.has(key)) continue;
+            paymentRevenueByMeeting.set(key, {
+              meetingCount: linkedIds.length,
+              totalAmount: revenue.totalAmount,
+              proof: revenue.paymentProof?.link,
+              verification: revenue.paymentVerification,
+            });
+          }
+        }
+      }
+    }
+
     const transformedMeetings = meetings.map((meeting) => {
       const totalParticipants = [
         ...(meeting.internalParticipants || []),
@@ -694,8 +722,11 @@ const fetchMeetingReportService = async ({
           ),
       );
 
+      const paymentRevenue = paymentRevenueByMeeting.get(String(meeting._id));
+
       return {
         _id: meeting._id,
+        ...(includeInternalPaymentRevenue && { paymentRevenue }),
          isCurrentUserInvolved,
         receptionist: isReceptionist
           ? formatPersonName(meeting.receptionist)
@@ -723,6 +754,12 @@ const fetchMeetingReportService = async ({
           ? meeting.externalClient.registeredClientCompany ||
             meeting.externalClient.visitorCompany
           : null,
+        clientId: meeting.client?._id ?? null,
+        creditsExceeded: (meeting.creditsExceeded ?? meeting.toPay) === true,
+        paymentOutstanding: meeting.paymentStatus === false,
+        ...(clientId && { updatedAt: meeting.updatedAt }),
+        overageCredits: meeting.overageCredits ?? 0,
+        paidCreditMonths: meeting.paymentStatus === true ? meeting.creditOverages ?? [] : [],
         paymentAmount: meeting.paymentAmount ?? null,
         paymentBaseAmount: meeting.paymentBaseAmount ?? null,
         paymentGstAmount: meeting.paymentGstAmount ?? null,
@@ -752,7 +789,7 @@ const fetchMeetingReportService = async ({
         participants: totalParticipants,
          ...(includeReviews && { reviews: getMeetingReview(meeting) }),
         discountAmount: meeting.discountAmount,
-        paymentVerification: meeting.paymentVerification,
+        paymentVerification: paymentRevenue?.verification ?? meeting.paymentVerification,
         company: meeting.company,
       };
     });

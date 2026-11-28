@@ -293,7 +293,7 @@ const createPartnership = async (req, res, next) => {
     ) {
       return res.status(409).json({
         field: "email",
-        message: "This email already has an enquiry in this tab.",
+        message: "Email already exists.",
       });
     }
     if (
@@ -307,7 +307,7 @@ const createPartnership = async (req, res, next) => {
     ) {
       return res.status(409).json({
         field: kind === "partnership" ? "mobile" : "phone",
-        message: "This phone number already has an enquiry in this tab.",
+        message: "Phone number already exists.",
       });
     }
     let presentation;
@@ -359,8 +359,8 @@ const createPartnership = async (req, res, next) => {
             : "phone"
           : "email",
         message: phoneConflict
-          ? "This phone number already has an enquiry in this tab."
-          : "This email already has an enquiry in this tab.",
+          ? "Phone number already exists."
+          : "Email already exists.",
       });
     }
     return next(error);
@@ -495,7 +495,7 @@ const updatePartnership = async (req, res, next) => {
     ) {
       return res.status(409).json({
         field: "email",
-        message: "This email already has an enquiry in this tab.",
+        message: "Email already exists.",
       });
     }
     const phoneNormalized = phone ? normalizePhone(phone) : undefined;
@@ -513,7 +513,7 @@ const updatePartnership = async (req, res, next) => {
     ) {
       return res.status(409).json({
         field: phoneField,
-        message: "This phone number already has an enquiry in this tab.",
+        message: "Phone number already exists.",
       });
     }
     const previousPresentationKey = submission.presentation?.key;
@@ -578,8 +578,8 @@ const updatePartnership = async (req, res, next) => {
             : "phone"
           : "email",
         message: phoneConflict
-          ? "This phone number already has an enquiry in this tab."
-          : "This email already has an enquiry in this tab.",
+          ? "Phone number already exists."
+          : "Email already exists.",
       });
     }
     return next(error);

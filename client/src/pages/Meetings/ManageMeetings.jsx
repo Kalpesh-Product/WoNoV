@@ -1,3 +1,15 @@
+import { useFinanceNavigate } from "../Dashboard/FinanceDashboard/financeDashboard1";
+import MeetingFinanceStatusChip from "./MeetingFinanceStatusChip";
+import MeetingPaymentChip from "./MeetingPaymentChip";
+import DetalisFormatted from "../../components/DetalisFormatted";
+import { inrFormat } from "../../utils/currencyFormat";
+import {
+  getMeetingFinanceStatus,
+  isMeetingPaid,
+  meetingPaymentVerification,
+} from "../../utils/meetingFinanceStatus";
+import InternalMeetingDetails from "./InternalMeetingDetails";
+import MeetingStatusChip from "./MeetingStatusChip";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -22,10 +34,7 @@ import { queryClient } from "../../main";
 import MuiModal from "../../components/MuiModal";
 import PrimaryButton from "../../components/PrimaryButton";
 import ThreeDotMenu from "../../components/ThreeDotMenu";
-import { MdOutlineRemoveRedEye } from "react-icons/md";
-import DetalisFormatted from "../../components/DetalisFormatted";
-import MeetingTimeDetails from "../../components/MeetingTimeDetails";
-import { formatMeetingDateRange } from "../../utils/formatMeetingDateRange";
+import ViewMeetingButton from "./ViewMeetingButton";
 import { Controller, useForm } from "react-hook-form";
 import humanDate from "../../utils/humanDateForamt";
 import humanTime from "../../utils/humanTime";
@@ -59,6 +68,7 @@ const defaultChecklist = [
 
 const ManageMeetings = ({ financeView = false }) => {
   const axios = useAxiosPrivate();
+  const navigate = useFinanceNavigate();
   const { auth } = useAuth();
   const roleTitles = auth?.user?.role?.map((role) => role?.roleTitle) || [];
   const [checklistModalOpen, setChecklistModalOpen] = useState(false);
@@ -159,11 +169,6 @@ const ManageMeetings = ({ financeView = false }) => {
   const isAdminTimingRestrictedUser = isAdminTimingUser;
 
   const statusColors = {
-    Upcoming: { bg: "#E3F2FD", text: "#1565C0" }, // Light Blue
-    Ongoing: { bg: "#FFF3E0", text: "#E65100" }, // Light Orange
-    Completed: { bg: "#E8F5E9", text: "#1B5E20" }, // Light Green
-    Extended: { bg: "#EDE9FE", text: "#6D28D9" }, // Light Purple
-    Cancelled: { bg: "#FFEBEE", text: "#B71C1C" }, // Light Red
     Available: { bg: "#E3F2FD", text: "#0D47A1" },
     Occupied: { bg: "#ECEFF1", text: "#37474F" },
     Cleaning: { bg: "#E0F2F1", text: "#00796B" },
@@ -212,7 +217,10 @@ const ManageMeetings = ({ financeView = false }) => {
 
     const matchingClient = clientDetails.find((client) =>
       [client?.clientName, client?.clientInvoiceName, client?.brandName].some(
-        (name) => String(name || "").trim().toLowerCase() === meetingClientName,
+        (name) =>
+          String(name || "")
+            .trim()
+            .toLowerCase() === meetingClientName,
       ),
     );
 
@@ -393,6 +401,7 @@ const ManageMeetings = ({ financeView = false }) => {
               startDate: meetingFilters.startDate,
               endDate: meetingFilters.endDate,
               type: "internal",
+              includeInternalPaymentRevenue: true,
               page: pagination.page,
               limit: pagination.limit,
               search: debouncedMeetingSearch || undefined,
@@ -478,26 +487,6 @@ const ManageMeetings = ({ financeView = false }) => {
     department: getMeetingDepartmentLabel(meeting),
     // meetingCreditBalance: clientDetails.find((c) => c.clientName === meeting.client)?.meetingCreditBalance.toFixed(2) || "0.00",
   }));
-
-  const getDisplayDuration = (meeting) => {
-    if (meeting?.bookingSlots?.length) {
-      const minutes = meeting.bookingSlots.reduce((total, slot) =>
-        total + dayjs(slot.endTime).diff(dayjs(slot.startTime), "minute"), 0);
-      return `${minutes}min`;
-    }
-    const startTime = meeting?.startTime;
-    const endTime = meeting?.endTime;
-
-    if (!startTime || !endTime) return meeting?.duration || "N/A";
-
-    const durationInMinutes = dayjs(endTime).diff(dayjs(startTime), "minute");
-
-    if (!Number.isFinite(durationInMinutes) || durationInMinutes < 0) {
-      return meeting?.duration || "N/A";
-    }
-
-    return `${durationInMinutes}min`;
-  };
 
   const canEditMeeting = (meeting) => {
     if (!meeting) return false;
@@ -782,6 +771,44 @@ const ManageMeetings = ({ financeView = false }) => {
     return "User";
   };
 
+  const { mutate: verifyPayment, isPending: isVerifyingPayment } = useMutation({
+    mutationFn: async ({ meetingId, status }) => {
+      const response = await axios.patch(
+        "/api/meetings/update-meeting-payment-status",
+        { meetingId, status },
+      );
+      return response.data;
+    },
+    onSuccess: async (data, { status }) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["meetings"] }),
+        queryClient.invalidateQueries({ queryKey: ["meetings-revenue"] }),
+      ]);
+      if (status === "Completed") {
+        toast.success(
+          "Verification Completed. Please Upload the Invoice in Billing",
+        );
+        navigate(
+          "/app/dashboard/finance-dashboard/billing/client-invoicing/meeting-revenue-invoicing",
+          { replace: true },
+        );
+      } else {
+        toast.success(data.message);
+      }
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || error.message);
+      if (error.response?.status === 409) {
+        queryClient.invalidateQueries({
+          queryKey: ["meetings", "finance-internal-meetings"],
+        });
+      }
+    },
+  });
+
+  const requiresPayment = (meeting) =>
+    meeting.creditsExceeded && meeting.meetingStatus !== "Cancelled";
+
   const columns = [
     { field: "srNo", headerName: "Sr No" },
     { field: "client", headerName: "Company" },
@@ -817,16 +844,7 @@ const ManageMeetings = ({ financeView = false }) => {
       field: "displayMeetingStatus",
       headerName: "Meeting Status",
       sort: "desc",
-      cellRenderer: (params) => (
-        <Chip
-          label={params.value || ""}
-          sx={{
-            backgroundColor: statusColors[params.value]?.bg || "#F5F5F5",
-            color: statusColors[params.value]?.text || "#000",
-            fontWeight: "bold",
-          }}
-        />
-      ),
+      cellRenderer: MeetingStatusChip,
     },
     {
       field: "housekeepingStatus",
@@ -873,11 +891,76 @@ const ManageMeetings = ({ financeView = false }) => {
         );
       },
     },
+    ...(financeView
+      ? [
+          {
+            colId: "internalPaymentStatus",
+            headerName: "Payment Status",
+            valueGetter: ({ data }) =>
+              !requiresPayment(data)
+                ? "Not Required"
+                : isMeetingPaid(data.paymentStatus)
+                  ? "Paid"
+                  : "Unpaid",
+            cellRenderer: ({ value }) => <MeetingPaymentChip status={value} />,
+          },
+          {
+            colId: "internalFinanceStatus",
+            headerName: "Finance Status",
+            minWidth: 150,
+            pinned: "right",
+            valueGetter: ({ data }) => {
+              if (requiresPayment(data)) return getMeetingFinanceStatus(data);
+              const credits = data.creditsUsed ?? 0;
+              return "Credits used";
+            },
+            cellRenderer: ({ value }) => (
+              <MeetingFinanceStatusChip status={value} />
+            ),
+          },
+        ]
+      : []),
     {
       field: "action",
       headerName: "Action",
       pinned: "right",
       cellRenderer: (params) => {
+        if (financeView) {
+          const meeting = params.data;
+          const step =
+            meetingPaymentVerification[
+              meeting.paymentVerification || "Pending"
+            ];
+          const canVerify =
+            requiresPayment(meeting) &&
+            isMeetingPaid(meeting.paymentStatus) &&
+            meeting.paymentRevenue &&
+            step?.next;
+
+          return (
+            <div className="flex items-center gap-2">
+              <ViewMeetingButton
+                onClick={() => handleSelectedMeeting("viewDetails", meeting)}
+              />
+              {canVerify && (
+                <ThreeDotMenu
+                  disabled={isVerifyingPayment}
+                  menuItems={[
+                    {
+                      label: step.action,
+                      onClick: () =>
+                        verifyPayment({
+                          meetingId: meeting._id,
+                          status: step.next,
+                        }),
+                    },
+                  ]}
+                />
+              )}
+            </div>
+          );
+        }
+
         const status = params.data.meetingStatus;
         const housekeepingStatus = params.data.housekeepingStatus;
 
@@ -892,14 +975,18 @@ const ManageMeetings = ({ financeView = false }) => {
           meetingStartTime.isValid() && !currentTime.isBefore(meetingStartTime);
         const isEditAllowed = canEditMeeting(params.data);
         const isMonthBooking = params.data.bookingSlots?.length > 1;
-        const lastSlotEnd = isMonthBooking ? dayjs(params.data.bookingSlots.at(-1).endTime) : null;
+        const lastSlotEnd = isMonthBooking
+          ? dayjs(params.data.bookingSlots.at(-1).endTime)
+          : null;
         const editMenuItem = {
           label: "Edit",
           onClick: () => handleEditMeeting("edit", params.data),
         };
 
         const menuItems = isCompleted
-          ? (isMonthBooking ? [] : [editMenuItem])
+          ? isMonthBooking
+            ? []
+            : [editMenuItem]
           : [
               !isOngoing &&
                 !isHousekeepingCompleted && {
@@ -914,34 +1001,34 @@ const ManageMeetings = ({ financeView = false }) => {
                   label: "Mark As Ongoing",
                   onClick: () => handleOngoing("ongoing", params.data._id),
                 },
-              !isUpcoming && (!isMonthBooking || currentTime.isAfter(lastSlotEnd)) && {
-                label: "Mark As Completed",
-                onClick: () => handleCompleted("complete", params.data._id),
-              },
-              !isUpcoming && !isMonthBooking && {
-                label: "Extend Meeting",
-                onClick: () => handleExtendMeetingModal("extend", params.data),
-              },
-              isUpcoming && !isMonthBooking && {
-                label: "Cancel",
-                onClick: () => handleSelectedMeeting("cancel", params.data),
-              },
+              !isUpcoming &&
+                (!isMonthBooking || currentTime.isAfter(lastSlotEnd)) && {
+                  label: "Mark As Completed",
+                  onClick: () => handleCompleted("complete", params.data._id),
+                },
+              !isUpcoming &&
+                !isMonthBooking && {
+                  label: "Extend Meeting",
+                  onClick: () =>
+                    handleExtendMeetingModal("extend", params.data),
+                },
+              isUpcoming &&
+                !isMonthBooking && {
+                  label: "Cancel",
+                  onClick: () => handleSelectedMeeting("cancel", params.data),
+                },
             ].filter(Boolean);
 
         return (
           <div className="flex gap-2 items-center">
-            <div
+            <ViewMeetingButton
               onClick={() => handleSelectedMeeting("viewDetails", params.data)}
-              className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
-            >
-              <span className="text-subtitle">
-                <MdOutlineRemoveRedEye />
-              </span>
-            </div>
+            />
 
-            {!financeView && !isFinance && !isCancelled && menuItems.length > 0 && (
-              <ThreeDotMenu menuItems={menuItems} />
-            )}
+            {!financeView &&
+              !isFinance &&
+              !isCancelled &&
+              menuItems.length > 0 && <ThreeDotMenu menuItems={menuItems} />}
           </div>
         );
       },
@@ -952,7 +1039,7 @@ const ManageMeetings = ({ financeView = false }) => {
     <div className="flex min-w-0 w-full max-w-full flex-col gap-4">
       <PageFrame className="min-w-0 w-full max-w-full">
         <div className="min-w-0 w-full max-w-full overflow-x-auto">
-        <YearWiseTable
+          <YearWiseTable
             search
             dateColumn={"date"}
             initialDateRange={initialMeetingDateRange}
@@ -1109,91 +1196,55 @@ const ManageMeetings = ({ financeView = false }) => {
         open={detailsModal}
         onClose={() => setDetailsModal(false)}
       >
-        {modalMode === "viewDetails" && (
-          <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4 w-full">
-            <div className="font-bold">Basic Info</div>
-            <DetalisFormatted
-              title="Title"
-              detail={selectedMeeting?.subject || "Title"}
-            />
-            <DetalisFormatted
-              title="Agenda"
-              detail={selectedMeeting.agenda || "N/A"}
-            />
-            <DetalisFormatted title="Date" detail={formatMeetingDateRange(selectedMeeting)} />
-            <MeetingTimeDetails
-              startTime={selectedMeeting.startTime}
-              endTime={
-                selectedMeeting.scheduledEndTime || selectedMeeting.endTime
-              }
-              extendTime={selectedMeeting.extendTime}
-              duration={getDisplayDuration(selectedMeeting)}
-              bookingSlots={selectedMeeting?.bookingSlots}
-            />
-            <DetalisFormatted
-              title="Status"
-              detail={selectedMeeting.displayMeetingStatus || "N/A"}
-            />
-            <DetalisFormatted
-              title="Type"
-              detail={selectedMeeting.meetingType || "N/A"}
-            />
-            <DetalisFormatted
-              title="Company"
-              detail={selectedMeeting.client || "N/A"}
-            />
-            <br />
-            <div className="font-bold">People Involved</div>
-            {selectedMeeting.participants?.length > 0 && (
-              <DetalisFormatted
-                title="Participants"
-                detail={
-                  selectedMeeting.participants
-                    .map((p) => {
-                      return p.firstName
-                        ? `${p.firstName} ${p.lastName}`
-                        : p.employeeName
-                          ? p.employeeName
-                          : "N/A";
-                    })
-                    .join(", ") || "N/A"
-                }
-              />
+        {modalMode === "viewDetails" && selectedMeeting && (
+          <InternalMeetingDetails meeting={selectedMeeting}>
+            {financeView && selectedMeeting.creditsExceeded && (
+              <>
+                <div className="pt-4 font-bold">Payment Details</div>
+                <DetalisFormatted
+                  title="Payment Status"
+                  detail={selectedMeeting.paymentStatus}
+                />
+                <DetalisFormatted
+                  title="Finance Status"
+                  detail={getMeetingFinanceStatus(selectedMeeting)}
+                />
+                <DetalisFormatted
+                  title="Payment Mode"
+                  detail={selectedMeeting.paymentMode || "N/A"}
+                />
+                {selectedMeeting.paymentRevenue?.meetingCount > 1 && (
+                  <DetalisFormatted
+                    title="Meetings in This Payment"
+                    detail={selectedMeeting.paymentRevenue.meetingCount}
+                  />
+                )}
+                <DetalisFormatted
+                  title="Total Payment Amount"
+                  detail={`INR ${inrFormat(selectedMeeting.paymentRevenue?.totalAmount ?? selectedMeeting.paymentAmount)}`}
+                />
+                {(selectedMeeting.paymentRevenue?.proof ||
+                  selectedMeeting.paymentProof) && (
+                  <DetalisFormatted
+                    title="Payment Proof"
+                    detail={
+                      <a
+                        href={
+                          selectedMeeting.paymentRevenue?.proof ||
+                          selectedMeeting.paymentProof
+                        }
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-primary underline"
+                      >
+                        View File
+                      </a>
+                    }
+                  />
+                )}
+              </>
             )}
-
-            <DetalisFormatted
-              title="Booked By"
-              detail={selectedMeeting.bookedBy}
-            />
-            <DetalisFormatted
-              title="Receptionist"
-              detail={selectedMeeting.receptionist}
-              // detail={`N/A`}
-            />
-            <DetalisFormatted
-              title="Department"
-              detail={selectedMeeting.department || "Unknown"}
-            />
-            <DetalisFormatted
-              title="Company"
-              detail={selectedMeeting.client || "Unknown"}
-            />
-            <br />
-            <div className="font-bold">Venue Details</div>
-            <DetalisFormatted title="Room" detail={selectedMeeting.roomName} />
-            <DetalisFormatted
-              title="Location"
-              detail={`${selectedMeeting.location?.unitNo} (${selectedMeeting.location?.unitName})`}
-            />
-            <DetalisFormatted
-              title="Building"
-              detail={selectedMeeting.location?.building?.buildingName}
-            />
-            <DetalisFormatted
-              title="Housekeeping Status"
-              detail={selectedMeeting.housekeepingStatus}
-            />
-          </div>
+          </InternalMeetingDetails>
         )}
         {modalMode === "cancel" && (
           <div>

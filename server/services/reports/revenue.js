@@ -412,6 +412,12 @@ const fetchMeetingRevenueReportService = async ({
   //     return "Upload Invoice";
   //   }
    const getFinanceStatus = (item) => {
+    const isInternalOverage = item.meeting?.meetingType === "Internal" &&
+      (item.meeting.creditsExceeded ?? item.meeting.toPay) === true;
+    if ((item.meetingIds?.length || isInternalOverage) && item.financeStatus !== "Verified") {
+      return (item.paymentVerification ?? item.meeting?.paymentVerification) === "Completed"
+        ? "Upload Invoice" : "Pending";
+    }
     if (isHistoricalRevenue(item.date) || item.financeStatus === "Verified") {
       return "Verified";
     }
@@ -451,7 +457,7 @@ const fetchMeetingRevenueReportService = async ({
       .populate({
         path: "meeting",
         select:
-          "meetingType subject agenda startDate endDate bookingSlots startTime endTime extendTime status houeskeepingStatus bookedBy receptionist client externalClient bookedRoom paymentVerification paymentStatus paymentMode paymentProof discountAmount",
+          "meetingType subject agenda startDate endDate bookingSlots startTime endTime extendTime status houeskeepingStatus bookedBy receptionist client externalClient bookedRoom creditsExceeded toPay paymentVerification paymentStatus paymentMode paymentProof discountAmount",
         populate: [
           {
             path: "bookedBy",
@@ -649,13 +655,14 @@ const fetchMeetingRevenueReportService = async ({
       source: item.source || "meeting-revenue",
       visitorDetails: item.visitorDetails || null,
       clientName: item.client,
+      meetingIds: item.meetingIds || [],
       meetingType:
         item.source === "day-pass"
           ? item.meetingType
           : item.meeting
             ? "Meeting Room Booking"
-            : String(item.particulars || "").trim() || "N/A",
-      particulars: item.particulars,
+            : item.meetingIds?.length ? "Meeting Credit Payment" : String(item.particulars || "").trim() || "N/A",
+      particulars: item.meetingIds?.length ? "Meeting credit payment" : item.particulars,
       unitsOrHours: item.unitsOrHours,
       hoursBooked: item.hoursBooked,
       costPerHour: item.costPerHour,
@@ -693,13 +700,13 @@ const fetchMeetingRevenueReportService = async ({
       paymentProofLink:
         item.source === "day-pass"
           ? item.paymentProof?.url || ""
-          : item.meeting?.paymentProof?.link || "",
+          : item.paymentProof?.link || item.meeting?.paymentProof?.link || "",
       paymentProofName:
         item.source === "day-pass"
           ? item.paymentProof?.name || "View File"
-          : item.meeting?.paymentProof?.name || "",
+          : item.paymentProof?.name || item.meeting?.paymentProof?.name || "",
             paymentVerification:
-        item.paymentVerification || item.meeting?.paymentVerification || "N/A",
+        item.paymentVerification || item.meeting?.paymentVerification || (item.meetingIds?.length ? "Pending" : "N/A"),
       //paymentVerification: item.meeting?.paymentVerification || "N/A",
       paymentMode: item.meeting?.paymentMode || item.remarks || "N/A",
       meetingTitle: item.meeting?.subject || "",

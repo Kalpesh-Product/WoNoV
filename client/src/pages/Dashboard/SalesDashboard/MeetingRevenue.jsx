@@ -1,3 +1,4 @@
+import MeetingCreditPaymentDetails from "./MeetingCreditPaymentDetails";
 import { useFinanceNavigate as useNavigate } from "../FinanceDashboard/financeDashboard1";
 import MeetingPaymentDetails from "../../../components/MeetingPaymentDetails";
 import DayPassPaymentDetails from "../../../components/DayPassPaymentDetails";
@@ -1439,13 +1440,16 @@ const DayPassInvoiceFields = ({ revenue }) => {
           />}
           <MuiModal
            // title="Meeting Revenue Details" 
-             title={selectedRevenue?.source === "day-pass" ? "Visitor Revenue Detail" : "Meeting Revenue Details"}  
+            title={selectedRevenue?.source === "day-pass" ? "Visitor Revenue Detail" :
+              selectedRevenue?.meetingIds?.length ? "Meeting Credit Payment" : "Meeting Revenue Details"}
             open={Boolean(selectedRevenue)}
             onClose={() => setSelectedRevenue(null)}
-             widthClassName="w-[92vw] max-w-[770px]"
+             widthClass={selectedRevenue?.meetingIds?.length ? "w-[94vw] max-w-[1050px]" : undefined}
           >
             {selectedRevenue && (selectedRevenue.source === "day-pass" ? (
               <DayPassRevenueDetails revenue={selectedRevenue} />
+            ) : selectedRevenue.meetingIds?.length ? (
+              <MeetingCreditPaymentDetails key={selectedRevenue.id} revenue={selectedRevenue} />
             ) : (
               <div className="grid grid-cols-1 gap-4 w-full">
                 <div className="font-bold text-lg">Basic Info</div>

@@ -1,0 +1,162 @@
+/**
+ * Any CSS included here will be global. The classic template
+ * bundles Infima by default.
+ */
+
+:root {
+  --ifm-color-primary: #1e3d73;
+  --ifm-color-primary-dark: #1b3768;
+  --ifm-color-primary-darker: #193462;
+  --ifm-color-primary-darkest: #152b51;
+  --ifm-color-primary-light: #21437f;
+  --ifm-color-primary-lighter: #234685;
+  --ifm-color-primary-lightest: #274f95;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #0db4ea;
+  --ifm-color-primary-dark: #0ca2d3;
+  --ifm-color-primary-darker: #0b99c7;
+  --ifm-color-primary-darkest: #097ea4;
+  --ifm-color-primary-light: #20bef3;
+  --ifm-color-primary-lighter: #2cc2f3;
+  --ifm-color-primary-lightest: #50ccf5;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+
+.wono-blue {
+  color: #0ba9ef;
+}
+
+/* Scoped utility shim so the copied app Footer.jsx renders identically. */
+.wono-footer[class~="w-full"], .wono-footer [class~="w-full"] { width: 100%; }
+.wono-footer[class~="w-36"], .wono-footer [class~="w-36"] { width: 9rem; }
+.wono-footer[class~="w-auto"], .wono-footer [class~="w-auto"] { width: auto; }
+
+.wono-footer[class~="flex"], .wono-footer [class~="flex"] { display: flex; }
+.wono-footer[class~="grid"], .wono-footer [class~="grid"] { display: grid; }
+.wono-footer[class~="flex-col"], .wono-footer [class~="flex-col"] { flex-direction: column; }
+.wono-footer[class~="flex-wrap"], .wono-footer [class~="flex-wrap"] { flex-wrap: wrap; }
+.wono-footer[class~="justify-center"], .wono-footer [class~="justify-center"] { justify-content: center; }
+.wono-footer[class~="items-center"], .wono-footer [class~="items-center"] { align-items: center; }
+
+.wono-footer[class~="relative"], .wono-footer [class~="relative"] { position: relative; }
+.wono-footer[class~="absolute"], .wono-footer [class~="absolute"] { position: absolute; }
+.wono-footer[class~="fixed"], .wono-footer [class~="fixed"] { position: fixed; }
+.wono-footer[class~="inset-0"], .wono-footer [class~="inset-0"] { inset: 0; }
+.wono-footer[class~="z-50"], .wono-footer [class~="z-50"] { z-index: 50; }
+.wono-footer[class~="top-3"], .wono-footer [class~="top-3"] { top: 0.75rem; }
+.wono-footer[class~="right-3"], .wono-footer [class~="right-3"] { right: 0.75rem; }
+
+.wono-footer[class~="bg-gray-100"], .wono-footer [class~="bg-gray-100"] { background-color: #f3f4f6; }
+.wono-footer[class~="bg-gray-50"], .wono-footer [class~="bg-gray-50"] { background-color: #f9fafb; }
+.wono-footer[class~="bg-white"], .wono-footer [class~="bg-white"] { background-color: #fff; }
+.wono-footer[class~="bg-black"], .wono-footer [class~="bg-black"] { background-color: rgb(0 0 0 / 0.5); }
+
+.wono-footer[class~="text-black"], .wono-footer [class~="text-black"] { color: #000; }
+.wono-footer[class~="text-gray-800"], .wono-footer [class~="text-gray-800"] { color: #1f2937; }
+.wono-footer[class~="text-gray-600"], .wono-footer [class~="text-gray-600"] { color: #4b5563; }
+.wono-footer[class~="text-gray-500"], .wono-footer [class~="text-gray-500"] { color: #6b7280; }
+.wono-footer[class~="text-primary-blue"], .wono-footer [class~="text-primary-blue"] { color: #0ba9ef; }
+
+.wono-footer[class~="shadow-lg"], .wono-footer [class~="shadow-lg"] {
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+.wono-footer[class~="text-sm"], .wono-footer [class~="text-sm"] { font-size: 0.875rem; }
+.wono-footer[class~="text-xs"], .wono-footer [class~="text-xs"] { font-size: 0.75rem; }
+.wono-footer[class~="text-lg"], .wono-footer [class~="text-lg"] { font-size: 1.125rem; }
+.wono-footer[class~="text-[10px]"], .wono-footer [class~="text-[10px]"] { font-size: 10px; }
+.wono-footer[class~="text-[12px]"], .wono-footer [class~="text-[12px]"] { font-size: 12px; }
+.wono-footer[class~="leading-6"], .wono-footer [class~="leading-6"] { line-height: 1.5rem; }
+
+.wono-footer[class~="font-medium"], .wono-footer [class~="font-medium"] { font-weight: 500; }
+.wono-footer[class~="font-semibold"], .wono-footer [class~="font-semibold"] { font-weight: 600; }
+.wono-footer[class~="lowercase"], .wono-footer [class~="lowercase"] { text-transform: lowercase; }
+.wono-footer[class~="uppercase"], .wono-footer [class~="uppercase"] { text-transform: uppercase; }
+.wono-footer[class~="text-center"], .wono-footer [class~="text-center"] { text-align: center; }
+
+.wono-footer[class~="cursor-pointer"], .wono-footer [class~="cursor-pointer"] { cursor: pointer; }
+.wono-footer[class~="cursor-not-allowed"], .wono-footer [class~="cursor-not-allowed"] { cursor: not-allowed; }
+.wono-footer [class~="hover:underline"]:hover { text-decoration: underline; }
+.wono-footer [class~="hover:text-gray-500"]:hover { color: #6b7280; }
+.wono-footer [class~="hover:text-black"]:hover { color: #000; }
+.wono-footer [class~="hover:border-black"]:hover { border-color: #000; }
+.wono-footer [class~="hover:opacity-100"]:hover { opacity: 1; }
+
+.wono-footer[class~="opacity-80"], .wono-footer [class~="opacity-80"] { opacity: 0.8; }
+.wono-footer[class~="opacity-40"], .wono-footer [class~="opacity-40"] { opacity: 0.4; }
+
+.wono-footer[class~="grid-cols-2"], .wono-footer [class~="grid-cols-2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.wono-footer[class~="gap-x-10"], .wono-footer [class~="gap-x-10"] { column-gap: 2.5rem; }
+.wono-footer[class~="gap-1"], .wono-footer [class~="gap-1"] { gap: 0.25rem; }
+.wono-footer[class~="gap-4"], .wono-footer [class~="gap-4"] { gap: 1rem; }
+
+.wono-footer[class~="pt-12"], .wono-footer [class~="pt-12"] { padding-top: 3rem; }
+.wono-footer[class~="pb-8"], .wono-footer [class~="pb-8"] { padding-bottom: 2rem; }
+.wono-footer[class~="py-6"], .wono-footer [class~="py-6"] { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+.wono-footer[class~="py-4"], .wono-footer [class~="py-4"] { padding-top: 1rem; padding-bottom: 1rem; }
+.wono-footer[class~="py-2"], .wono-footer [class~="py-2"] { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+.wono-footer[class~="py-[2px]"], .wono-footer [class~="py-[2px]"] { padding-top: 2px; padding-bottom: 2px; }
+.wono-footer[class~="px-2"], .wono-footer [class~="px-2"] { padding-left: 0.5rem; padding-right: 0.5rem; }
+.wono-footer[class~="px-3"], .wono-footer [class~="px-3"] { padding-left: 0.75rem; padding-right: 0.75rem; }
+.wono-footer[class~="px-4"], .wono-footer [class~="px-4"] { padding-left: 1rem; padding-right: 1rem; }
+.wono-footer[class~="p-6"], .wono-footer [class~="p-6"] { padding: 1.5rem; }
+.wono-footer[class~="p-2"], .wono-footer [class~="p-2"] { padding: 0.5rem; }
+
+.wono-footer[class~="mb-8"], .wono-footer [class~="mb-8"] { margin-bottom: 2rem; }
+.wono-footer[class~="mb-4"], .wono-footer [class~="mb-4"] { margin-bottom: 1rem; }
+.wono-footer[class~="mb-3"], .wono-footer [class~="mb-3"] { margin-bottom: 0.75rem; }
+.wono-footer[class~="mx-auto"], .wono-footer [class~="mx-auto"] { margin-left: auto; margin-right: auto; }
+
+.wono-footer[class~="border"], .wono-footer [class~="border"] { border-width: 1px; border-style: solid; }
+.wono-footer[class~="border-t"], .wono-footer [class~="border-t"] { border-top-width: 1px; border-top-style: solid; }
+.wono-footer[class~="border-t-2"], .wono-footer [class~="border-t-2"] { border-top-width: 2px; border-top-style: solid; }
+.wono-footer[class~="border-white"], .wono-footer [class~="border-white"] { border-color: #fff; }
+.wono-footer[class~="border-gray-200"], .wono-footer [class~="border-gray-200"] { border-color: #e5e7eb; }
+.wono-footer[class~="border-gray-300"], .wono-footer [class~="border-gray-300"] { border-color: #d1d5db; }
+.wono-footer[class~="border-gray-700"], .wono-footer [class~="border-gray-700"] { border-color: #374151; }
+.wono-footer[class~="border-black"], .wono-footer [class~="border-black"] { border-color: #000; }
+
+.wono-footer[class~="rounded-md"], .wono-footer [class~="rounded-md"] { border-radius: 0.375rem; }
+.wono-footer[class~="rounded-lg"], .wono-footer [class~="rounded-lg"] { border-radius: 0.5rem; }
+.wono-footer[class~="max-w-2xl"], .wono-footer [class~="max-w-2xl"] { max-width: 42rem; }
+.wono-footer[class~="max-h-[80vh]"], .wono-footer [class~="max-h-[80vh]"] { max-height: 80vh; }
+.wono-footer[class~="overflow-y-auto"], .wono-footer [class~="overflow-y-auto"] { overflow-y: auto; }
+
+@media (min-width: 768px) {
+  .wono-footer [class~="md:px-[7.5rem]"] { padding-left: 7.5rem; padding-right: 7.5rem; }
+  .wono-footer [class~="md:flex-row"] { flex-direction: row; }
+  .wono-footer [class~="md:justify-start"] { justify-content: flex-start; }
+  .wono-footer [class~="md:text-xs"] { font-size: 0.75rem; }
+  .wono-footer [class~="md:ml-2"] { margin-left: 0.5rem; }
+  .wono-footer [class~="md:grid-cols-3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1024px) {
+  .wono-footer [class~="lg:justify-between"] { justify-content: space-between; }
+  .wono-footer [class~="lg:justify-end"] { justify-content: flex-end; }
+  .wono-footer [class~="lg:items-start"] { align-items: flex-start; }
+  .wono-footer [class~="lg:mb-0"] { margin-bottom: 0; }
+  .wono-footer [class~="lg:w-auto"] { width: auto; }
+  .wono-footer [class~="lg:w-fit"] { width: fit-content; }
+  .wono-footer [class~="lg:mx-0"] { margin-left: 0; margin-right: 0; }
+  .wono-footer [class~="lg:text-left"] { text-align: left; }
+  .wono-footer [class~="lg:text-right"] { text-align: right; }
+  .wono-footer [class~="lg:flex-row"] { flex-direction: row; }
+}
+
+/* Keep the app footer light in both docs themes. */
+[data-theme="dark"] .wono-footer { background-color: #f3f4f6; color: #000; }
+[data-theme="dark"] .wono-footer [class~="bg-gray-50"] { background-color: #f9fafb; }
+[data-theme="dark"] .wono-footer [class~="bg-white"] { background-color: #fff; }
+[data-theme="dark"] .wono-footer [class~="text-black"],
+[data-theme="dark"] .wono-footer [class~="text-gray-800"] { color: #1f2937; }
+[data-theme="dark"] .wono-footer [class~="text-gray-600"] { color: #4b5563; }
+[data-theme="dark"] .wono-footer [class~="text-gray-500"] { color: #6b7280; }
+[data-theme="dark"] .wono-footer [class~="border-white"] { border-color: #fff; }
+[data-theme="dark"] .wono-footer [class~="border-gray-200"] { border-color: #e5e7eb; }
+[data-theme="dark"] .wono-footer [class~="border-gray-300"] { border-color: #d1d5db; }
+[data-theme="dark"] .wono-footer [class~="border-gray-700"] { border-color: #374151; }
