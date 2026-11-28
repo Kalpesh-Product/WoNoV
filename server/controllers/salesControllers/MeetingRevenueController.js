@@ -1,3 +1,4 @@
+const Meeting = require("../../models/meetings/Meetings");
 const MeetingRevenue = require("../../models/sales/MeetingRevenue");
 const { parseAmount } = require("../../utils/parseAmount");
 const { Readable } = require("stream");
@@ -93,6 +94,21 @@ const updateMeetingRevenue = async (req, res, next) => {
       return res.status(404).json({ message: "Meeting revenue not found" });
     }
 
+    if (revenueModel === MeetingRevenue && existingRevenue.financeStatus !== "Verified") {
+      if (existingRevenue.meetingIds?.length && existingRevenue.paymentVerification !== "Completed") {
+        return res.status(409).json({ message: "Complete internal payment verification before uploading an invoice" });
+      }
+      if (existingRevenue.meeting && await Meeting.exists({
+        _id: existingRevenue.meeting,
+        company,
+        meetingType: "Internal",
+        paymentVerification: { $ne: "Completed" },
+        $or: [{ creditsExceeded: true }, { creditsExceeded: null, toPay: true }],
+      })) {
+        return res.status(409).json({ message: "Complete internal payment verification before uploading an invoice" });
+      }
+    }
+
     const financeStatus = req.body.financeStatus || "Upload Invoice";
     if (!["Upload Invoice", "Verified"].includes(financeStatus)) {
       return res.status(400).json({ message: "Invalid finance status" });
@@ -173,6 +189,35 @@ const getMeetingRevenue = async (req, res, next) => {
         return res
           .status(404)
           .json({ message: "Meeting revenue with the provided ID not found" });
+      }
+
+      if (req.query.includeCoveredMeetings === "true" && revenue.meetingIds?.length) {
+        const coveredMeetings = await Meeting.find({
+          _id: { $in: revenue.meetingIds },
+          company,
+          meetingType: "Internal",
+        }).select(
+          "subject agenda startDate endDate bookingSlots startTime endTime extendTime status " +
+          "houeskeepingStatus bookedBy clientBookedBy receptionist client bookedRoom " +
+          "meetingType creditsUsed overageCredits paymentAmount internalParticipants clientParticipants",
+        ).populate([
+          { path: "bookedBy", select: "firstName lastName departments", populate: { path: "departments", select: "name" } },
+          { path: "clientBookedBy", select: "employeeName" },
+          { path: "internalParticipants", select: "firstName lastName" },
+          { path: "clientParticipants", select: "employeeName" },
+          { path: "receptionist", select: "firstName lastName" },
+          { path: "client", select: "clientName" },
+          { path: "bookedRoom", select: "name location", populate: {
+            path: "location", select: "unitNo unitName building",
+            populate: { path: "building", select: "buildingName" },
+          } },
+        ]).sort({ startTime: 1, _id: 1 }).lean();
+
+        return res.status(200).json({
+          meetingRangeStart: revenue.meetingRangeStart,
+          meetingRangeEndExclusive: revenue.meetingRangeEndExclusive,
+          coveredMeetings,
+        });
       }
 
       return res.status(200).json(revenue);

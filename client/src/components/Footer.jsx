@@ -47,8 +47,7 @@ const Footer = () => {
   };
   const goToHostsContentCopyright = () => {
     if (window.location.hostname.includes("localhost")) {
-      window.location.href =
-        "http://localhost:5173/content-and-copyright";
+      window.location.href = "http://localhost:5173/content-and-copyright";
     } else {
       window.location.href = "https://wono.co/content-and-copyright";
     }
@@ -138,7 +137,7 @@ const Footer = () => {
                     >
                       {linkObj.name}
                     </a>
-                  )
+                  ),
                 )}
               </div>
             ))}
@@ -233,10 +232,11 @@ const Footer = () => {
                       setShowLangModal(false);
                     }}
                     className={`border rounded-md px-3 py-2 
-        ${isDisabled
-                        ? "opacity-40 cursor-not-allowed"
-                        : "cursor-pointer hover:border-black"
-                      } 
+        ${
+          isDisabled
+            ? "opacity-40 cursor-not-allowed"
+            : "cursor-pointer hover:border-black"
+        } 
         ${selectedLang.code === lang.code ? "border-black" : "border-gray-300"}
       `}
                   >
@@ -273,14 +273,16 @@ const Footer = () => {
                       setShowCurrencyModal(false);
                     }}
                     className={`border rounded-md px-3 py-2 
-        ${isDisabled
-                        ? "opacity-40 cursor-not-allowed"
-                        : "cursor-pointer hover:border-black"
-                      } 
-        ${selectedCurrency.code === cur.code
-                        ? "border-black"
-                        : "border-gray-300"
-                      }
+        ${
+          isDisabled
+            ? "opacity-40 cursor-not-allowed"
+            : "cursor-pointer hover:border-black"
+        } 
+        ${
+          selectedCurrency.code === cur.code
+            ? "border-black"
+            : "border-gray-300"
+        }
       `}
                   >
                     <div className="font-medium">{cur.name}</div>

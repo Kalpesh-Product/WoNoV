@@ -65,19 +65,16 @@ const ManageVisitors = () => {
     isTechManager;
   const editedCheckInRaw = watch("checkInRaw");
 
-  const initialVisitorDateRange = useMemo(
-    () => {
-      const requestedDate = dayjs(redirectedVisitDate);
-      const rangeDate = requestedDate.isValid() ? requestedDate : dayjs();
+  const initialVisitorDateRange = useMemo(() => {
+    const requestedDate = dayjs(redirectedVisitDate);
+    const rangeDate = requestedDate.isValid() ? requestedDate : dayjs();
 
-      return {
-        startDate: rangeDate.startOf("month").toDate(),
-        endDate: rangeDate.endOf("month").toDate(),
-        key: "selection",
-      };
-    },
-    [redirectedVisitDate],
-  );
+    return {
+      startDate: rangeDate.startOf("month").toDate(),
+      endDate: rangeDate.endOf("month").toDate(),
+      key: "selection",
+    };
+  }, [redirectedVisitDate]);
   const [visitorDateRange, setVisitorDateRange] = useState(
     initialVisitorDateRange,
   );
@@ -510,6 +507,7 @@ const ManageVisitors = () => {
         >
           {modalMode === "view" ? (
             <>
+              <h3 className="font-bold">Visitor Information</h3>
               <DetalisFormatted
                 title="First Name"
                 detail={selectedVisitor?.firstName}
@@ -525,16 +523,17 @@ const ManageVisitors = () => {
               />
 
               <DetalisFormatted
-                title="Purpose"
-                detail={selectedVisitor?.purposeOfVisit}
-              />
-              <DetalisFormatted
                 title="Visitor Type"
                 detail={selectedVisitor?.visitorType}
               />
               <DetalisFormatted
                 title="Visitor Company"
                 detail={selectedVisitor?.visitorCompany}
+              />
+              <h3 className="mt-2 font-bold">Visit Details</h3>
+              <DetalisFormatted
+                title="Purpose"
+                detail={selectedVisitor?.purposeOfVisit}
               />
               <DetalisFormatted
                 title="To Meet"
@@ -560,6 +559,7 @@ const ManageVisitors = () => {
                 title="Date of Visit"
                 detail={selectedVisitor?.date}
               />
+              <h3 className="mt-2 font-bold">Others</h3>
               <DetalisFormatted
                 title="Check In"
                 detail={humanTime(selectedVisitor?.checkIn)}

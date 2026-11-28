@@ -118,10 +118,10 @@ const fetchCoworkingClientReportService = async ({
   const escapedSearch = escapeRegex(normalizedSearch);
   const searchRegex = escapedSearch ? new RegExp(escapedSearch, "i") : null;
   const numericSearch = Number(normalizedSearch.replace(/,/g, ""));
-  let clientQuery = { company };
+  const clientQuery = { company };
 
   if (coworkingclientid) {
-    clientQuery = { _id: coworkingclientid };
+    clientQuery._id = coworkingclientid;
   } else if (unitId) {
     clientQuery.unit = unitId;
   } else if (active) {

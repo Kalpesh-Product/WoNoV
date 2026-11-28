@@ -1,3 +1,4 @@
+const { getCreditOverage, getOveragePayment } = require("./meetingCreditOverage");
 const mongoose = require("mongoose");
 const Meeting = require("../../models/meetings/Meetings");
 const Room = require("../../models/meetings/Rooms");
@@ -168,16 +169,13 @@ const bookMeetingDates = async (req, res, next) => {
         creditsByMonth.set(key, (creditsByMonth.get(key) || 0) +
           Number((((slot.end - slot.start) / 3600000) * Number(room.perHourCredit || 0)).toFixed(2)));
       }
-      for (const key of creditsByMonth.keys()) {
-        const creditRecord = await resetMeetingCreditsIfNeeded(BookingModel, client, new Date(key));
-        if (!creditRecord) return fail(400, "Booking client/company not found.");
-      }
     }
 
     const firstSlot = parsedSlots[0];
     const lastSlot = parsedSlots[parsedSlots.length - 1];
     const meetingDoc = {
       meetingType,
+      creditsExceeded: false,
       bookingPeriod: "Month",
       bookingSlots: parsedSlots.map((slot) => ({ date: slot.date, startTime: slot.start, endTime: slot.end })),
       bookedBy: meetingType === "Internal" && bookedBy ? bookedBy : null,
@@ -220,9 +218,13 @@ const bookMeetingDates = async (req, res, next) => {
         throw error;
       }
 
+      const overages = [];
       if (meetingType === "Internal") {
         const currentMonth = getMonthStartUTC(new Date()).toISOString();
         for (const [key, amount] of creditsByMonth) {
+          const monthStart = new Date(key);
+          const creditRecord = await resetMeetingCreditsIfNeeded(BookingModel, client, monthStart, session);
+          if (!creditRecord) throw new Error("Booking client/company not found.");
           const update = {
             $inc: {
               "meetingCreditBalanceHistory.$.remainingCredit": -amount,
@@ -246,9 +248,14 @@ const bookMeetingDates = async (req, res, next) => {
             { session },
           );
           if (!updated) throw new Error("Unable to update meeting credits for the selected month.");
+          if (isClient) {
+            const credits = getCreditOverage(updated, monthStart, amount);
+            if (credits > 0) overages.push({ monthStart, credits });
+          }
         }
       }
-      createdMeetings = await Meeting.create([meetingDoc], { session });
+      const payment = overages.length ? getOveragePayment(room, overages) : {};
+      createdMeetings = await Meeting.create([{ ...meetingDoc, ...payment }], { session });
     });
 
     const recipientIds = [...new Set([

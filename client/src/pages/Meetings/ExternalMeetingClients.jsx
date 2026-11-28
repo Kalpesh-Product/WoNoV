@@ -1,3 +1,5 @@
+import MeetingFinanceStatusChip from "./MeetingFinanceStatusChip";
+import { getMeetingFinanceStatus, isMeetingPaid } from "../../utils/meetingFinanceStatus";
 import { useFinanceNavigate as useNavigate } from "../Dashboard/FinanceDashboard/financeDashboard1";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useLocation } from "react-router-dom";
@@ -32,7 +34,8 @@ import humanDate from "../../utils/humanDateForamt";
 import humanTime from "../../utils/humanTime";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
-import UploadFileInput from "../../components/UploadFileInput";
+import MeetingPaymentChip from "./MeetingPaymentChip";
+import MeetingPaymentModal from "./MeetingPaymentModal";
 import { inrFormat } from "../../utils/currencyFormat";
 import { getMeetingDisplayStatus } from "../../utils/meetingStatus";
 import PageFrame from "../../components/Pages/PageFrame";
@@ -173,17 +176,6 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
     "/app/dashboard/finance-dashboard/mix-bag/manage-meetings/external-clients",
   );
 
-  const paymentModes = [
-    "UPI",
-    "Cash",
-    "Cheque",
-    "NEFT",
-    "RTGS",
-    "IMPS",
-    "Credit Card",
-    "ETC",
-  ];
-
   const statusColors = {
     Upcoming: { bg: "#E3F2FD", text: "#1565C0" }, // Light Blue
     Ongoing: { bg: "#FFF3E0", text: "#E65100" }, // Light Orange
@@ -221,55 +213,7 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
   }, []);
 
   //-----------------------------Form--------------------------------//
-  const [openPaymentModal, setOpenPaymentModal] = useState(false);
   const [paymentMeeting, setPaymentMeeting] = useState(null);
-
-  const {
-    handleSubmit: handlePaymentSubmit,
-    control: paymentControl,
-    reset: resetPaymentForm,
-    formState: { errors: paymentErrors },
-    setValue: setPaymentValue,
-    watch: paymentWatch,
-  } = useForm({
-    defaultValues: {
-      amount: "",
-      paymentType: "",
-      paymentStatus: "",
-      transactionId: "",
-      paymentProof: "",
-      discountAmount: "",
-      discountPercentage: "",
-      gstAmount: "",
-      finalAmount: "",
-    },
-  });
-
-  const watchedDiscountAmount = paymentWatch("discountAmount");
-
-  const calculatePaymentDetails = (meeting, meetingRoom, discount = 0) => {
-    if (!meeting || !meetingRoom?.perHourPrice) return null;
-
-    const slots = meeting.bookingSlots?.length ? meeting.bookingSlots : [meeting];
-    const durationInHours = slots.reduce((hours, slot) =>
-      hours + (new Date(slot.endTime) - new Date(slot.startTime)) / (1000 * 60 * 60), 0);
-
-    const amount = meetingRoom.perHourPrice * durationInHours;
-    const safeDiscount = Number.isFinite(discount) ? discount : 0;
-    const discountedAmount = Math.max(amount - safeDiscount, 0);
-    const gstAmount = discountedAmount * 0.18;
-    const finalAmount = discountedAmount + gstAmount;
-    const discountPercentage = amount
-      ? ((safeDiscount / amount) * 100).toFixed(2)
-      : "0.00";
-
-    return {
-      amount: amount.toFixed(2),
-      gstAmount: gstAmount.toFixed(2),
-      finalAmount: finalAmount.toFixed(2),
-      discountPercentage,
-    };
-  };
 
   const {
     handleSubmit: cancelMeetingSubmit,
@@ -436,19 +380,6 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
       };
     });
 
-  //Fetch Single Room
-  const { data: room = {}, isLoading: isRoomLoading } = useQuery({
-    queryKey: ["room", paymentMeeting?.roomName],
-    // queryKey: ["room"],
-    queryFn: async () => {
-      const response = await axios.get(
-        `/api/meetings/get-room/${paymentMeeting.roomName}`,
-      );
-      return response.data;
-    },
-    enabled: !!paymentMeeting?.roomName,
-  });
-
   // API mutation for submitting housekeeping tasks
   const housekeepingMutation = useMutation({
     mutationFn: async (data) => {
@@ -537,35 +468,6 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
     },
     onError: (error) => {
       toast.error(error.message);
-    },
-  });
-
-  const { isPending: isPaymentPending, mutate: updatePayment } = useMutation({
-    mutationKey: ["meeting-payment"],
-    mutationFn: async (data) => {
-      const response = await axios.patch(
-        `/api/meetings/update-meeting/${data.get("meetingId")}`,
-        data,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        },
-      );
-      return response.data;
-    },
-    onSuccess: () => {
-      toast.success("Payment details updated successfully");
-      refreshMeetingQueries();
-      setOpenPaymentModal(false);
-    },
-    onError: (error) => {
-      toast.error(
-        error?.response?.data?.message ||
-          error?.response?.data?.error ||
-          error?.message ||
-          "Payment update failed",
-      );
     },
   });
 
@@ -762,26 +664,7 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
     setNewItem("");
   };
 
-  const handleOpenPaymentModal = (meeting) => {
-    setPaymentMeeting(meeting);
-    resetPaymentForm({
-      amount: "",
-      paymentType: meeting?.paymentMode || "",
-      paymentStatus: meeting?.paymentStatus || "",
-      transactionId: "",
-      paymentProof: "",
-      discountAmount: meeting?.paymnetDiscountAmount || 0,
-      discountPercentage: "",
-      gstAmount: "",
-      finalAmount: "",
-    });
-    setOpenPaymentModal(true); // open the modal
-  };
-
-  const handleClosePaymentModal = () => {
-    setOpenPaymentModal(false);
-    setPaymentMeeting(null);
-  };
+  const handleOpenPaymentModal = setPaymentMeeting;
 
   const handleToggleChecklistItem = (index, type) => {
     if (!selectedMeetingId) return;
@@ -852,75 +735,8 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
 
     housekeepingMutation.mutate(payload);
   };
-  useEffect(() => {
-    if (!isRoomLoading && paymentMeeting && room?.perHourPrice) {
-      const paymentDetails = calculatePaymentDetails(paymentMeeting, room);
 
-      if (!paymentDetails) return;
-
-      setPaymentValue("amount", paymentDetails.amount);
-      setPaymentValue("gstAmount", paymentDetails.gstAmount);
-      setPaymentValue("finalAmount", paymentDetails.finalAmount);
-    }
-  }, [room, isRoomLoading, paymentMeeting, setPaymentValue]);
-
-  useEffect(() => {
-    if (!isRoomLoading && paymentMeeting && room?.perHourPrice) {
-      const discountAmount = parseFloat(watchedDiscountAmount) || 0;
-      const paymentDetails = calculatePaymentDetails(
-        paymentMeeting,
-        room,
-        discountAmount,
-      );
-
-      if (!paymentDetails) return;
-
-      setPaymentValue("discountPercentage", paymentDetails.discountPercentage);
-      setPaymentValue("gstAmount", paymentDetails.gstAmount);
-      setPaymentValue("finalAmount", paymentDetails.finalAmount);
-    }
-  }, [
-    watchedDiscountAmount,
-    room,
-    isRoomLoading,
-    paymentMeeting,
-    setPaymentValue,
-  ]);
   //---------------------------------Event handlers----------------------------------------//
-  const getFinanceStatus = (rowData = {}) => {
-    const isPaid = isMeetingPaid(rowData?.paymentStatus);
-    const paymentVerificationStatus = String(
-      rowData?.paymentVerification || "Pending",
-    ).toLowerCase();
-
-    if (!isPaid) return "Wait for Payment";
-    if (paymentVerificationStatus === "pending") return "Pending";
-    if (paymentVerificationStatus === "under review") return "Review Payment";
-    if (paymentVerificationStatus === "verified") return "Verify Payment";
-    if (paymentVerificationStatus === "completed") return "Completed";
-    return "Pending";
-  };
-  const isMeetingPaid = (paymentStatus) =>
-    paymentStatus === "Paid" || paymentStatus === true;
-
-  const getFinanceStatusChipStyle = (status) => {
-    const normalizedStatus = String(status || "").toLowerCase();
-
-    if (normalizedStatus === "completed") {
-      return { backgroundColor: "#D1FAE5", color: "#047857" };
-    }
-    if (normalizedStatus === "pending") {
-      return { backgroundColor: "#FFF7ED", color: "#F97316" };
-    }
-    if (normalizedStatus === "verify payment") {
-      return { backgroundColor: "#DBEAFE", color: "#1D4ED8" };
-    }
-    if (normalizedStatus === "review payment") {
-      return { backgroundColor: "#FEF3C7", color: "#B45309" };
-    }
-    return { backgroundColor: "#FEE2E2", color: "#B91C1C" };
-  };
-
   const columns = [
     { field: "srNo", headerName: "Sr No" },
     { field: "bookedBy", headerName: "Booked By" },
@@ -953,15 +769,8 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
       field: "paymentStatus",
       headerName: "Payment Status",
       pinned: "right",
-      cellRenderer: (params) => (
-        <Chip
-          label={isMeetingPaid(params.value) ? "Paid" : "Unpaid"}
-          sx={{
-            backgroundColor: isMeetingPaid(params.value) ? "#D1FAE5" : "#FECACA", // Tailwind: green-100 / red-100
-            color: isMeetingPaid(params.value) ? "#047857" : "#B91C1C", // Tailwind: green-700 / red-700
-            fontWeight: "bold",
-          }}
-        />
+      cellRenderer: ({ value }) => (
+        <MeetingPaymentChip status={isMeetingPaid(value) ? "Paid" : "Unpaid"} />
       ),
       cellStyle: { textAlign: "center" },
     },
@@ -971,20 +780,9 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
             field: "financeStatus",
             headerName: "Finance Status",
             pinned: "right",
-            cellRenderer: (params) => {
-              const status = getFinanceStatus(params.data);
-              const chipStyle = getFinanceStatusChipStyle(status);
-              return (
-                <Chip
-                  label={status}
-                  sx={{
-                    backgroundColor: chipStyle.backgroundColor,
-                    color: chipStyle.color,
-                    fontWeight: "bold",
-                  }}
-                />
-              );
-            },
+            cellRenderer: ({ data }) => (
+              <MeetingFinanceStatusChip status={getMeetingFinanceStatus(data)} />
+            ),
           },
         ]
       : []),
@@ -1879,214 +1677,13 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
         )}
       </MuiModal>
 
-      <MuiModal
-        open={openPaymentModal}
-        onClose={handleClosePaymentModal}
-        title={"Update Payment Details"}
-      >
-        <form
-          className="flex flex-col gap-4"
-          onSubmit={handlePaymentSubmit((data) => {
-            console.log("Submitting form with data:", data);
-            const formData = new FormData();
-
-            formData.append("paymentAmount", data?.finalAmount);
-            formData.append("paymentMode", data?.paymentType);
-            formData.append("paymentStatus", data?.paymentStatus);
-            formData.append("meetingId", paymentMeeting?._id);
-            formData.append("discountAmount", data?.discountAmount || 0);
-            formData.append("paymentBaseAmount", data?.amount || 0);
-            formData.append("paymentGstAmount", data?.gstAmount || 0);
-            formData.append("unitsOrHours", "Hours");
-            formData.append("taxable", data?.amount || 0);
-            formData.append("gst", data?.gstAmount || 0);
-            formData.append("status", data?.paymentStatus);
-            formData.append(
-              "client",
-              paymentMeeting?.externalClient || paymentMeeting?.client || "",
-            );
-            formData.append("meetingRoomName", paymentMeeting?.roomName || "");
-
-            // If it's a file input (like a PDF or image):
-            if (data?.paymentProof) {
-              formData.append("paymentProof", data.paymentProof);
-            }
-            updatePayment(formData);
-            // updatePayment({
-            //   paymentAmount: data?.amount,
-            //   paymentMode: data?.paymentType,
-            //   paymentStatus: data?.paymentStatus,
-            //   meetingId: paymentMeeting?._id,
-            //   discountAmount: data.discountAmount,
-            //   paymentProof: data.paymentProof
-            // });
-          })}
-        >
-          <div className="flex gap-4 items-center">
-            <Controller
-              name="amount"
-              control={paymentControl}
-              rules={{ required: "Amount is required" }}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  disabled
-                  label="Amount"
-                  type="number"
-                  size="small"
-                  fullWidth
-                  error={!!paymentErrors.amount}
-                  helperText={paymentErrors.amount?.message}
-                />
-              )}
-            />
-            <Controller
-              name="gstAmount"
-              control={paymentControl}
-              rules={{ required: "GST Amount is required" }}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  disabled
-                  label="GST Amount"
-                  type="number"
-                  size="small"
-                  fullWidth
-                  error={!!paymentErrors.gstAmount}
-                  helperText={paymentErrors.gstAmount?.message}
-                />
-              )}
-            />
-          </div>
-
-          <div className="flex gap-4 items-center">
-            <Controller
-              name="discountAmount"
-              control={paymentControl}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Discount Amount"
-                  type="number"
-                  size="small"
-                  fullWidth
-                  inputProps={{ step: "0.01" }}
-                  onBlur={(event) => {
-                    field.onBlur();
-                    const value = event.target.value;
-                    if (value !== "" && Number.isFinite(Number(value))) {
-                      field.onChange(Number(value).toFixed(2));
-                    }
-                  }}
-                  error={!!paymentErrors.discountAmount}
-                  helperText={paymentErrors.discountAmount?.message}
-                />
-              )}
-            />
-            <Controller
-              name="discountPercentage"
-              control={paymentControl}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  disabled
-                  label="Discount %"
-                  type="string"
-                  size="small"
-                  fullWidth
-                  error={!!paymentErrors.discountPercentage}
-                  helperText={paymentErrors.discountPercentage?.message}
-                />
-              )}
-            />
-          </div>
-          <Controller
-            name="finalAmount"
-            control={paymentControl}
-            rules={{ required: "Final Amount is required" }}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                disabled
-                label="Final Amount"
-                type="number"
-                size="small"
-                fullWidth
-                error={!!paymentErrors.finalAmount}
-                helperText={paymentErrors.finalAmount?.message}
-              />
-            )}
-          />
-          <div className="flex gap-4 items-center">
-            <Controller
-              name="paymentType"
-              control={paymentControl}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  size="small"
-                  label="Payment Type"
-                  select
-                  fullWidth
-                >
-                  <MenuItem value="" disabled>
-                    Select Payment Type
-                  </MenuItem>
-                  {paymentModes.map((p) => {
-                    return <MenuItem value={p}>{p}</MenuItem>;
-                  })}
-                </TextField>
-              )}
-            />
-            <Controller
-              name="paymentStatus"
-              control={paymentControl}
-              rules={{ required: "Payment status is required" }}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  select
-                  label="Payment Status"
-                  size="small"
-                  fullWidth
-                  error={!!paymentErrors.paymentStatus}
-                  helperText={paymentErrors.paymentStatus?.message}
-                >
-                  <MenuItem value="Paid">Paid</MenuItem>
-                  <MenuItem value="Unpaid">Unpaid</MenuItem>
-                </TextField>
-              )}
-            />
-          </div>
-          <Controller
-            name="paymentProof"
-            control={paymentControl}
-            render={({ field }) => (
-              <UploadFileInput
-                value={field.value}
-                label="Add Payment Proof"
-                onChange={field.onChange}
-                allowedExtensions={["pdf", "jpg", "jpeg", "png"]}
-                previewType="pdf"
-              />
-            )}
-          />
-          <div>
-            <p className="text-xs">
-              Add payment proof as : ( "Add Payment Proof in PDF, jpg, jpeg, png
-              format & Name as : DD-MM-YYYY_(Customer Name)" )
-            </p>
-          </div>
-          <div className="flex justify-center">
-            <PrimaryButton
-              disabled={isPaymentPending}
-              className="w-full"
-              title={"Save Payment Details"}
-              type={"submit"}
-            />
-          </div>
-        </form>
-      </MuiModal>
+      {paymentMeeting && (
+        <MeetingPaymentModal
+          meeting={paymentMeeting}
+          onClose={() => setPaymentMeeting(null)}
+          onSaved={refreshMeetingQueries}
+        />
+      )}
     </div>
   );
 };

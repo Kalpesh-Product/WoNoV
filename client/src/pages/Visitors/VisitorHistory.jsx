@@ -359,7 +359,11 @@ const VisitorHistory = () => {
         widthClass="w-2/5"
       >
         <div className="grid grid-cols-1 gap-4">
-          {!isInternalHistory && <div className="font-bold">Client Details</div>}
+          {isInternalHistory ? (
+            <h3 className="font-bold">Visitor Information</h3>
+          ) : (
+            <div className="font-bold">Client Details</div>
+          )}
           <DetalisFormatted
             title="First Name"
             detail={data?.visitor?.firstName || "N/A"}
@@ -382,10 +386,12 @@ const VisitorHistory = () => {
               detail={data?.visitor?.gender || "N/A"}
             />
           )}
-          <DetalisFormatted
-            title={isInternalHistory ? "Purpose" : "Purpose of Visit"}
-            detail={selectedVisit?.purposeOfVisit}
-          />
+          {!isInternalHistory && (
+            <DetalisFormatted
+              title="Purpose of Visit"
+              detail={selectedVisit?.purposeOfVisit}
+            />
+          )}
           {isInternalHistory && (
             <>
               <DetalisFormatted
@@ -395,6 +401,11 @@ const VisitorHistory = () => {
               <DetalisFormatted
                 title="Visitor Company"
                 detail={selectedVisit?.visitorCompany || "N/A"}
+              />
+              <h3 className="mt-2 font-bold">Visit Details</h3>
+              <DetalisFormatted
+                title="Purpose"
+                detail={selectedVisit?.purposeOfVisit}
               />
               <DetalisFormatted
                 title="Department"
@@ -482,6 +493,7 @@ const VisitorHistory = () => {
             title="Date of Visit"
             detail={selectedVisit?.dateOfVisit}
           />
+          {isInternalHistory && <h3 className="mt-2 font-bold">Others</h3>}
           <DetalisFormatted
             title={isInternalHistory ? "Check In" : "Checkin Time"}
             detail={selectedVisit?.checkIn}
@@ -499,16 +511,18 @@ const VisitorHistory = () => {
             detail={selectedVisit?.checkedOutBy}
           />
           {!isInternalHistory && isMeetingVisit(selectedVisit || {}) && (
-            <MeetingPaymentDetails revenue={selectedVisit?.meetingPaymentDetails} showFinanceDetails={false} />
+            <MeetingPaymentDetails
+              revenue={selectedVisit?.meetingPaymentDetails}
+              showFinanceDetails={false}
+            />
           )}
-          {!isInternalHistory &&
-            !isMeetingVisit(selectedVisit || {}) && (
+          {!isInternalHistory && !isMeetingVisit(selectedVisit || {}) && (
             <>
               <br />
               <div className="font-bold">Payment Details</div>
               <DetalisFormatted
                 title="Desk Amount"
-                detail={`INR ${inrFormat((selectedVisit?.amount) || 0)}`}
+                detail={`INR ${inrFormat(selectedVisit?.amount || 0)}`}
               />
               <DetalisFormatted
                 title="Discount"
@@ -543,7 +557,7 @@ const VisitorHistory = () => {
                 detail={selectedVisit?.paymentVerification || "N/A"}
               />
             </>
-            )}
+          )}
         </div>
       </MuiModal>
     </PageFrame>

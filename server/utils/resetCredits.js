@@ -2,8 +2,9 @@ const resetMeetingCreditsIfNeeded = async (
   BookingModel,
   clientId,
   targetDate = new Date(),
+  session,
 ) => {
-  const record = await BookingModel.findById(clientId);
+  const record = await BookingModel.findById(clientId).session(session ?? null);
 
   if (!record) return null;
 
@@ -81,15 +82,10 @@ const resetMeetingCreditsIfNeeded = async (
     );
 
     if (currentMonthIndex >= 0) {
-      // If it exists (e.g. from a future booking made previously), sync current balance
-      // record.meetingCreditBalance = record.meetingCreditBalanceHistory[currentMonthIndex].remainingCredit;
-
-      // Month rollover must start fresh for the current real-world month.
-      record.meetingCreditBalanceHistory[currentMonthIndex].remainingCredit =
-        monthlyCredit;
-      record.meetingCreditBalanceHistory[currentMonthIndex].consumedCredit = 0;
+      // Future bookings can already have consumed or settled credits for this month.
+      record.meetingCreditBalance =
+        record.meetingCreditBalanceHistory[currentMonthIndex].remainingCredit;
     } else {
-      // Create new current-month entry
       record.meetingCreditBalance = monthlyCredit;
       record.meetingCreditBalanceHistory.push({
         monthStartDate: nowMonthStart,
@@ -98,13 +94,12 @@ const resetMeetingCreditsIfNeeded = async (
       });
     }
 
-    record.meetingCreditBalance = monthlyCredit;
     record.lastCreditReset = now;
     isModified = true;
   }
 
   if (isModified) {
-    await record.save();
+    await record.save({ session });
   }
 
   return record;

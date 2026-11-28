@@ -16,11 +16,14 @@ import PageFrame from "../../components/Pages/PageFrame";
 import { noOnlyWhitespace } from "../../utils/validators";
 import ThreeDotMenu from "../../components/ThreeDotMenu";
 import DetalisFormatted from "../../components/DetalisFormatted";
-import { MdOutlineRemoveRedEye } from "react-icons/md";
+import { MdHistory, MdOutlineRemoveRedEye } from "react-icons/md";
+import ClientMeetingHistory from "./ClientMeetingHistory";
+import { toUtcDayBoundary } from "../../utils/dateRange";
 import PrimaryButton from "../../components/PrimaryButton";
 import { PERMISSIONS } from "../../constants/permissions";
 import { useLocation, useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
 import { DateRangePicker } from "react-date-range";
 import { Popover } from "@mui/material";
 import { MdCalendarToday } from "react-icons/md";
@@ -30,6 +33,8 @@ import {
   DEFAULT_PAGE_SIZE,
   PAGE_SIZE_OPTIONS,
 } from "../../constants/pagination";
+
+dayjs.extend(utc);
 
 const Reviews = ({
   basePath = "/app/meetings",
@@ -347,6 +352,7 @@ const Reviews = ({
       "Monthly Credit": row.monthlyCredit,
       "Consumed Credit": row.consumedCredit,
       "Remaining Credit": row.remainingCredit,
+      "Credits Paid": row.creditsPaid,
     }));
 
   const exportClientCredits = (rows = clientCreditRows) => {
@@ -389,10 +395,6 @@ const Reviews = ({
     const startMonth = dayjs(startDate).startOf("month");
     const endMonth = dayjs(endDate).startOf("month");
     const today = dayjs();
-    const normalizeClientKey = (value) =>
-      String(value || "")
-        .trim()
-        .toLowerCase();
     const meetingCreditsByClientMonth = meetingsData.reduce((acc, meeting) => {
       const isInternalMeeting =
         String(meeting?.meetingType || "")
@@ -402,29 +404,30 @@ const Reviews = ({
         String(meeting?.meetingStatus || "")
           .trim()
           .toLowerCase() === "cancelled";
-      const meetingClientName = normalizeClientKey(meeting?.client);
+      const meetingClientId = meeting?.clientId;
       const meetingMonthDate =
         meeting?.date || meeting?.startDate || meeting?.startTime;
 
       if (
         !isInternalMeeting ||
         isCancelledMeeting ||
-        !meetingClientName ||
+        !meetingClientId ||
         !meetingMonthDate
       ) {
         return acc;
       }
 
       const monthKey = dayjs(meetingMonthDate).format("YYYY-MM");
-      const clientMonthKey = `${meetingClientName}__${monthKey}`;
+      const clientMonthKey = `${meetingClientId}__${monthKey}`;
 
-      if (!acc[clientMonthKey]) {
-        acc[clientMonthKey] = {
-          bookedCredits: 0,
-        };
+      const bookingSummary = acc[clientMonthKey] ??= { bookedCredits: 0, creditsPaid: 0 };
+      bookingSummary.bookedCredits += Number(meeting.creditsUsed || 0);
+
+      for (const { monthStart, credits } of meeting.paidCreditMonths ?? []) {
+        const key = `${meetingClientId}__${dayjs(monthStart).utc().format("YYYY-MM")}`;
+        const paidSummary = acc[key] ??= { bookedCredits: 0, creditsPaid: 0 };
+        paidSummary.creditsPaid += Number(credits || 0);
       }
-
-      acc[clientMonthKey].bookedCredits += Number(meeting?.creditsUsed || 0);
 
       return acc;
     }, {});
@@ -444,37 +447,21 @@ const Reviews = ({
       const clientId = client?._id;
       const clientName = client?.clientName || "-";
       const totalMonthlyCredit = Number(client?.totalMeetingCredits || 0);
-      const normalizedClientName = normalizeClientKey(clientName);
 
       return monthsArray.map((month) => {
         const monthLabel = month.format("MMM YYYY");
         const monthId = month.format("YYYY-MM");
-        const clientMonthKey = `${normalizedClientName}__${monthId}`;
+        const clientMonthKey = `${clientId}__${monthId}`;
         const bookingSummary = meetingCreditsByClientMonth[clientMonthKey];
         const historyEntry = client?.meetingCreditBalanceHistory?.find((h) =>
-          dayjs(h.monthStartDate).isSame(month, "month"),
+          dayjs(h.monthStartDate).utc().format("YYYY-MM") === monthId,
         );
         const bookedConsumed = Number(bookingSummary?.bookedCredits || 0);
-        const hasHistoryEntry = Boolean(historyEntry?.monthStartDate);
-
-        let remaining = totalMonthlyCredit;
-
-        if (hasHistoryEntry) {
-          remaining = Number(historyEntry?.remainingCredit || 0);
-        } else if (
-          (month.isSame(today, "month") || month.isAfter(today, "month")) &&
-          bookedConsumed > 0
-        ) {
-          remaining = Math.max(
-            Number((totalMonthlyCredit - bookedConsumed).toFixed(2)),
-            0,
-          );
-        }
-
-        const consumed = Math.max(
-          Number((totalMonthlyCredit - remaining).toFixed(2)),
-          0,
-        );
+        const creditsPaid = bookingSummary?.creditsPaid ?? 0;
+        const consumed = Number(historyEntry?.consumedCredit ?? (
+          month.isSame(today, "month") || month.isAfter(today, "month") ? bookedConsumed : 0
+        ));
+        const remaining = totalMonthlyCredit - consumed;
 
         return {
           id: `${clientId}-${monthId}`,
@@ -484,6 +471,7 @@ const Reviews = ({
           monthlyCredit: totalMonthlyCredit.toFixed(2),
           consumedCredit: consumed.toFixed(2),
           remainingCredit: remaining.toFixed(2),
+          creditsPaid: creditsPaid.toFixed(2),
           monthDate: month.toDate(),
         };
       });
@@ -507,13 +495,35 @@ const Reviews = ({
     meetingsData,
   ]);
 
+  const historyParams = new URLSearchParams(location.search);
+  const historyClientId = historyParams.get("historyClient");
+  const openMeetingHistory = ({ clientId, clientName }) => {
+    const params = new URLSearchParams(location.search);
+    params.set("historyClient", clientId);
+    params.set("historyName", clientName);
+    params.set("historyStart", toUtcDayBoundary(dateRange[0].startDate));
+    params.set("historyEnd", toUtcDayBoundary(dateRange[0].endDate, true));
+    navigate({ search: params.toString() }, { state: { fromClientCredits: true } });
+  };
+
+  const closeMeetingHistory = () => {
+    if (location.state?.fromClientCredits) {
+      navigate(-1);
+      return;
+    }
+    for (const param of ["historyClient", "historyName", "historyStart", "historyEnd", "historyMonth"]) {
+      historyParams.delete(param);
+    }
+    navigate({ search: historyParams.toString() }, { replace: true });
+  };
+
   const clientCreditColumns = [
     { field: "srNo", headerName: "Sr No", width: 90 },
     { field: "clientName", headerName: "Client Name", flex: 1 },
-    { field: "monthLabel", headerName: "Month", flex: 1 },
     { field: "monthlyCredit", headerName: "Monthly Credit", flex: 1 },
     { field: "consumedCredit", headerName: "Consumed Credit", flex: 1 },
     { field: "remainingCredit", headerName: "Remaining Credit", flex: 1 },
+    { field: "creditsPaid", headerName: "Credits Paid", flex: 1 },
     {
       field: "action",
       headerName: "Action",
@@ -529,15 +539,15 @@ const Reviews = ({
             </span>
           </div>
 
-          {/* <ThreeDotMenu
-            rowId={`credit-${params.data.clientId}`}
-            menuItems={[
-              {
-                label: "Edit",
-                onClick: () => handleOpenModal(params.data, "creditEdit"),
-              },
-            ]}
-          /> */}
+          <button
+            type="button"
+            aria-label="View history"
+            title="View history"
+            onClick={() => openMeetingHistory(params.data)}
+            className="hover:bg-gray-200 p-2 rounded-full text-subtitle"
+          >
+            <MdHistory />
+          </button>
         </div>
       ),
     },
@@ -549,6 +559,18 @@ const Reviews = ({
           reviews.reduce((acc, curr) => acc + curr.rate, 0) / reviews.length
         ).toFixed(2)
       : "0.00";
+
+  if (activeTabKey === "clientCredit" && historyClientId) {
+    return (
+      <ClientMeetingHistory
+        key={historyClientId}
+        clientId={historyClientId}
+        startDate={historyParams.get("historyStart")}
+        endDate={historyParams.get("historyEnd")}
+        onBack={closeMeetingHistory}
+      />
+    );
+  }
 
   return (
     <div className="p-4">
@@ -800,6 +822,7 @@ const Reviews = ({
               title="Remaining Credit"
               detail={selectedData.remainingCredit}
             />
+            <DetalisFormatted title="Credits Paid" detail={selectedData.creditsPaid} />
           </div>
         )}
 

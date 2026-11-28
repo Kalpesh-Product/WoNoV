@@ -1,6 +1,6 @@
 import React from "react";
 import { Breadcrumbs, Typography, Link } from "@mui/material";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import CurrencySelector from "./CurrencySelector";
 import { useSelector } from "react-redux";
 import useAuth from "../hooks/useAuth";
@@ -117,6 +117,10 @@ const BreadCrumbComponent = () => {
               segment && segment !== "app" && segment !== "dashboard",
           );
 
+  const isMeetingHistory = basePathSegments.includes("client-credit") &&
+    searchParams.has("historyClient");
+  const meetingHistoryParams = ["historyClient", "historyName", "historyStart", "historyEnd", "historyMonth"];
+
   const isVisitorHistoryPath = basePathSegments.includes("visitor-history");
   const isDayPassSalesHistoryPath =
     basePathSegments.includes("sales-dashboard") &&
@@ -201,6 +205,23 @@ const BreadCrumbComponent = () => {
         segment.toLowerCase() === "kra-kpa" &&
         !isEmployeeWorkCrumb)
     ) return null;
+
+    if (isMeetingHistory && segment === "client-credit") {
+      const listParams = new URLSearchParams(searchParams);
+      meetingHistoryParams.forEach((param) => listParams.delete(param));
+
+      return (
+        <Link
+          key={index}
+          component={RouterLink}
+          to={{ pathname: location.pathname, search: listParams.toString() }}
+          underline="hover"
+          color="inherit"
+        >
+          {displayText}
+        </Link>
+      );
+    }
 
     return isLast || isNonNavigableSegment ? (
       <Typography key={index} color="text.primary">
@@ -290,9 +311,18 @@ const BreadCrumbComponent = () => {
     }
   }
 
+  if (isMeetingHistory) {
+    breadcrumbs.push(
+      <Typography key="meeting-history" color="text.primary">
+        Meeting History
+      </Typography>,
+    );
+  }
+
   // Append query parameters dynamically to the breadcrumb
   queryParamEntries.forEach(([key, value], index) => {
     if (isVisitorHistoryPath && key === "type") return;
+    if (isMeetingHistory && meetingHistoryParams.includes(key)) return;
 
     breadcrumbs.push(
       <Typography key={`param-${index}`} color="text.primary">
@@ -300,6 +330,17 @@ const BreadCrumbComponent = () => {
       </Typography>,
     );
   });
+
+  if (isMeetingHistory) {
+    const clientName = queryParamEntries.find(([key]) => key === "historyName")?.[1];
+    if (clientName) {
+      breadcrumbs.push(
+        <Typography key="meeting-history-client" color="text.primary">
+          {clientName}
+        </Typography>,
+      );
+    }
+  }
 
   return (
     <div className="rounded-t-md flex items-center justify-between gap-4">
