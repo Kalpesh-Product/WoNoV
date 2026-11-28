@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import {
   Autocomplete,
-  Chip,
   MenuItem,
   Select,
   Skeleton,
@@ -12,17 +11,20 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Country, State, City } from "country-state-city";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { MdOutlineRemoveRedEye } from "react-icons/md";
-import PrimaryButton from "./PrimaryButton";
-import SecondaryButton from "./SecondaryButton";
-import AgTable from "./AgTable";
+import {
+  LuBuilding2,
+  LuFileText,
+  LuLandmark,
+  LuUserPlus,
+} from "react-icons/lu";
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
 import usePageDepartment from "../hooks/usePageDepartment";
 import useAuth from "../hooks/useAuth";
-import MuiModal from "./MuiModal";
-import DetalisFormatted from "./DetalisFormatted";
-import PageFrame from "./Pages/PageFrame";
-import humanDate from "../utils/humanDateForamt";
+import {
+  FormActions,
+  FormLayout,
+  FormSection,
+} from "./Forms/FormLayout";
 import {
   isAlphanumeric, 
   isValidBankAccount,
@@ -75,7 +77,7 @@ const Vendor = () => {
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient();
-  const { control, handleSubmit, reset, setValue } = useForm({
+  const { control, handleSubmit, reset, setValue, getValues } = useForm({
     mode: "onChange",
   });
   const [countries, setCountries] = useState([]);
@@ -166,6 +168,14 @@ const Vendor = () => {
     departmentName = "Frontend";
   }
 
+  const draftStorageKey = useMemo(
+    () =>
+      `vendor-onboarding-draft:${
+        auth?.user?._id || auth?.user?.id || "current-user"
+      }:${department?._id || "current-department"}`,
+    [auth?.user?._id, auth?.user?.id, department?._id],
+  );
+
   // Fetch states when a country is selected
   const handleCountryChange = (countryCode) => {
     setSelectedCountry(countryCode);
@@ -180,6 +190,43 @@ const Vendor = () => {
     // setCities(City.getCitiesOfState(city));
   };
 
+  useEffect(() => {
+    try {
+      const savedDraft = window.localStorage.getItem(draftStorageKey);
+      if (!savedDraft) return;
+
+      const parsedDraft = JSON.parse(savedDraft);
+      const allCountries = Country.getAllCountries();
+      const restoredCountry = allCountries.find(
+        (country) => country.name === parsedDraft.country,
+      );
+      const restoredStates = restoredCountry
+        ? State.getStatesOfCountry(restoredCountry.isoCode)
+        : [];
+      const restoredState = restoredStates.find(
+        (state) => state.name === parsedDraft.state,
+      );
+      const restoredCities =
+        restoredCountry && restoredState
+          ? City.getCitiesOfState(
+              restoredCountry.isoCode,
+              restoredState.isoCode,
+            )
+          : [];
+
+      setCountries(allCountries);
+      setSelectedCountry(restoredCountry?.isoCode || "");
+      setStates(restoredStates);
+      setSelectedState(restoredState?.isoCode || "");
+      setCities(restoredCities);
+      setSelectedCity(parsedDraft.city || "");
+      setVendorTypeInput(parsedDraft.vendorType || "");
+      reset(parsedDraft);
+    } catch {
+      window.localStorage.removeItem(draftStorageKey);
+    }
+  }, [draftStorageKey, reset]);
+
   const { mutate: vendorDetails, isPending } = useMutation({
     mutationFn: async (data) => {
       const response = await axios.post(`/api/vendors/onboard-vendor`, {
@@ -190,8 +237,14 @@ const Vendor = () => {
       return response.data;
     },
     onSuccess: function (data) {
+      window.localStorage.removeItem(draftStorageKey);
       reset();
       setVendorTypeInput("");
+      setSelectedCountry("");
+      setSelectedState("");
+      setSelectedCity("");
+      setStates([]);
+      setCities([]);
       toast.success(data.message);
       queryClient.invalidateQueries({
         queryKey: ["vendors", department._id],
@@ -213,31 +266,49 @@ const Vendor = () => {
   };
 
   const handleReset = () => {
+    window.localStorage.removeItem(draftStorageKey);
     reset();
     setVendorTypeInput("");
+    setSelectedCountry("");
+    setSelectedState("");
+    setSelectedCity("");
+    setStates([]);
+    setCities([]);
+  };
+
+  const handleSaveDraft = () => {
+    try {
+      window.localStorage.setItem(
+        draftStorageKey,
+        JSON.stringify(getValues()),
+      );
+      toast.success("Vendor onboarding draft saved");
+    } catch {
+      toast.error("Unable to save draft");
+    }
   };
    const validateOptional = (validator) => (value) =>
     !value || validator(value);
 
   return (
-    <div className="flex flex-col gap-8">
-      <PageFrame>
-        <div className="h-[65vh] overflow-y-auto pr-2 sm:pr-4">
-          <div className="flex justify-between items-center">
-            <span className="text-title text-primary font-pmedium">
-              VENDOR ONBOARDING FORM
-            </span>
-          </div>
-         <form onSubmit={handleSubmit(onSubmit)} className="pt-4 space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 gap-6">  
-              <div>
-                {/* Section: Basic Information */}
-                <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">
-                    Basic Information
-                  </span>
-                </div>
-                 <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-4 gap-4 py-4">
+    <FormLayout
+      title="Vendor Onboarding Form"
+      icon={LuUserPlus}
+      onSubmit={handleSubmit(onSubmit)}
+      actions={
+        <FormActions
+          onReset={handleReset}
+          onSaveDraft={handleSaveDraft}
+          isSubmitting={isPending}
+        />
+      }
+    >
+      <FormSection
+        title="Basic Information"
+        icon={LuBuilding2}
+        columns={2}
+        fullWidthLastChild
+      >
                   <Controller
                     name="name"
                     control={control}
@@ -380,7 +451,8 @@ const Vendor = () => {
                       </Select>
                     )}
                   /> */}
-                  <Controller
+                  <div className="shared-form-inline-fields shared-form-inline-fields--three">
+                    <Controller
                   name="country"
                   control={control}
                   defaultValue=""
@@ -410,8 +482,8 @@ const Vendor = () => {
                       ))}
                     </Select>
                   )}
-                />
-                <Controller
+                    />
+                    <Controller
                   name="state"
                   control={control}
                   defaultValue=""
@@ -440,8 +512,8 @@ const Vendor = () => {
                       ))}
                     </Select>
                   )}
-                />
-                  <Controller
+                    />
+                    <Controller
                     name="city"
                     control={control}
                     defaultValue=""
@@ -468,7 +540,8 @@ const Vendor = () => {
                         ))}
                       </Select>
                     )}
-                  />
+                    />
+                  </div>
                   <Controller
                     name="pinCode"
                     control={control}
@@ -498,16 +571,14 @@ const Vendor = () => {
                       />
                     )}
                   />
-                </div>
-              </div>
-              <div>
-                {/* Section: Other Information */}
-                <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">
-                    Other Information
-                  </span>
-                </div>
-               <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-3 gap-4 py-4">
+      </FormSection>
+
+      <FormSection
+        title="Other Information"
+        icon={LuFileText}
+        columns={2}
+        fullWidthLastChild
+      >
                   {/* <Controller
                   name="assesseeOfOtherTerritory"
                   control={control}
@@ -783,14 +854,14 @@ const Vendor = () => {
                       />
                     )}
                   />
-                </div>
-                {/* Section: Bank Information */}
-                <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">
-                    Bank Information
-                  </span>
-                </div>
-                 <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-3 gap-4 py-4">
+      </FormSection>
+
+      <FormSection
+        title="Bank Information"
+        icon={LuLandmark}
+        columns={3}
+        fullWidth
+      >
                   <Controller
                     name="ifscCode"
                     control={control}
@@ -933,23 +1004,8 @@ const Vendor = () => {
                       />
                     )}
                   />
-                </div>
-              </div>
-            </div>
-            {/* Submit Button */}
-            <div className="flex items-center justify-center gap-4">
-              <PrimaryButton type="submit" title={"Submit"} />
-              <SecondaryButton
-                handleSubmit={handleReset}
-                title={"Reset"}
-                type="button"
-              />
-            </div>
-          </form>
-        </div>
-      </PageFrame>
-
-    </div>
+      </FormSection>
+    </FormLayout>
   );
 };
 

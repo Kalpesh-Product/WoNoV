@@ -142,6 +142,10 @@ const CoWorkingClients = ({ clientSegment = "coworking" }) => {
   const handleClickRow = (clientData) => {
     dispatch(setSelectedClient(clientData));
     const isMixBag = location.pathname.includes("mix-bag");
+    const clientRouteSegment = isFlexibleDeskView
+      ? "flexible-desk"
+      : "co-working";
+    const encodedClientName = encodeURIComponent(clientData.clientName);
     const isRevenueBasePath =
       location.pathname.endsWith("/co-working") ||
       location.pathname.endsWith("/co-working/") ||
@@ -153,12 +157,12 @@ const CoWorkingClients = ({ clientSegment = "coworking" }) => {
 
     if ((isMixBag && isRevenueBasePath) || isCoworkingSummaryPath) {
       navigate(
-        `/app/dashboard/sales-dashboard/mix-bag/clients/co-working/${clientData.clientName}`,
+        `/app/dashboard/sales-dashboard/mix-bag/clients/${clientRouteSegment}/${encodedClientName}`,
         { replace: true },
       );
     } else if (!isMixBag && isRevenueBasePath) {
       navigate(
-        `/app/dashboard/sales-dashboard/clients/co-working/${clientData.clientName}`,
+        `/app/dashboard/sales-dashboard/clients/co-working/${encodedClientName}`,
       );
     }
   };
@@ -186,11 +190,12 @@ const CoWorkingClients = ({ clientSegment = "coworking" }) => {
     );
   };
   const viewEmployeeColumns = [
-    { field: "id", headerName: "Sr No",width:150 },
+    { field: "id", headerName: "Sr No", width: 90, minWidth: 90 },
     {
       field: "clientName",
       headerName: "Client Name",
       flex: 1,
+      minWidth: 260,
       cellRenderer: (params) => (
         <span
           style={{
@@ -204,20 +209,40 @@ const CoWorkingClients = ({ clientSegment = "coworking" }) => {
         </span>
       ),
     },
-    { field: "desks", headerName: "Desks", flex:0.5},
-    { field: "clientType", headerName: "Client Type", flex: 0.5, minWidth: 170 },
+    { field: "desks", headerName: "Desks", width: 95, minWidth: 95 },
+    {
+      field: "clientType",
+      headerName: "Client Type",
+      width: 165,
+      minWidth: 165,
+    },
     {
       field: "occupancy",
       headerName: "Occupancy (%)",
-      flex: 0.5,
+      width: 150,
+      minWidth: 150,
       cellRenderer: (params) => `${params.value}%`,
     },
-    { field: "agreementExpiry", headerName: "Agreement Expiry", flex: 0.5,},
-     {
+    {
+      field: "agreementExpiry",
+      headerName: "Agreement Expiry",
+      width: 180,
+      minWidth: 180,
+    },
+    {
+      field: "internalLead",
+      headerName: "Internal Lead",
+      width: 165,
+      minWidth: 165,
+      pinned: "right",
+      valueFormatter: (params) => params.value || "-",
+    },
+    {
       field: "status",
       headerName: "Status",
-      flex: 1,
-      pinned:"right",
+      width: 165,
+      minWidth: 165,
+      pinned: "right",
       cellRenderer: (params) => {
         const status = params.value ? "Active" : "Inactive";
         const statusColorMap = {
@@ -242,6 +267,7 @@ const CoWorkingClients = ({ clientSegment = "coworking" }) => {
       field: "actions",
       headerName: "Actions",
       pinned: "right",
+      width: 160,
       minWidth: 150,
       sortable: false,
       filter: false,
@@ -352,6 +378,7 @@ const CoWorkingClients = ({ clientSegment = "coworking" }) => {
       100
     ).toFixed(1),
     agreementExpiry: calculateAgreementExpiry(item.startDate, item.endDate),
+    internalLead: item.internalLead || "-",
     // ratePerOpenDesk: item.ratePerOpenDesk,
     // ratePerCabinDesk: item.ratePerCabinDesk,
     // annualIncrement: item.annualIncrement,

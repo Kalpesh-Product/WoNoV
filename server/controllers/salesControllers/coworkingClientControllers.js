@@ -76,6 +76,8 @@ const createCoworkingClient = async (req, res, next) => {
       ratePerOpenDesk,
       ratePerCabinDesk,
       annualIncrement,
+      brokerage,
+      internalLead,
       perDeskMeetingCredits,
       totalMeetingCredits,
       startDate,
@@ -214,6 +216,7 @@ const createCoworkingClient = async (req, res, next) => {
     const normalizedRatePerOpenDesk = Number(ratePerOpenDesk);
     const normalizedRatePerCabinDesk = Number(ratePerCabinDesk);
     const normalizedAnnualIncrement = Number(annualIncrement);
+    const normalizedBrokerage = Number(brokerage ?? 0);
 
     const bookedDesks = normalizedCabinDesks + normalizedOpenDesks;
     if (
@@ -222,11 +225,13 @@ const createCoworkingClient = async (req, res, next) => {
         normalizedRatePerOpenDesk,
         normalizedRatePerCabinDesk,
         normalizedAnnualIncrement,
+        normalizedBrokerage,
       ].some((value) => Number.isNaN(value)) ||
       bookedDesks < 0 ||
       normalizedRatePerOpenDesk < 0 ||
       normalizedRatePerCabinDesk < 0 ||
-      normalizedAnnualIncrement < 0
+      normalizedAnnualIncrement < 0 ||
+      normalizedBrokerage < 0
     ) {
       throw new CustomError(
         "Value shouldn't be less than 0",
@@ -265,6 +270,8 @@ const createCoworkingClient = async (req, res, next) => {
       ratePerOpenDesk: normalizedRatePerOpenDesk,
       ratePerCabinDesk: normalizedRatePerCabinDesk,
       annualIncrement: normalizedAnnualIncrement,
+      brokerage: normalizedBrokerage,
+      internalLead: String(internalLead || "").trim(),
       billingFrequency,
       clientType,
       perDeskMeetingCredits,
@@ -472,6 +479,8 @@ const updateCoworkingClient = async (req, res, next) => {
       ratePerOpenDesk,
       ratePerCabinDesk,
       annualIncrement,
+      brokerage,
+      internalLead,
       channel,
       currentStatus,
       startDate,
@@ -621,6 +630,14 @@ const updateCoworkingClient = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid annualIncrement" });
     }
 
+    if (
+      req.body.brokerage !== undefined &&
+      (!Number.isFinite(Number(req.body.brokerage)) ||
+        Number(req.body.brokerage) < 0)
+    ) {
+      return res.status(400).json({ message: "Invalid brokerage" });
+    }
+
     if (req.body.rentDate) {
       const parsedRentDate = new Date(req.body.rentDate);
       req.body.rentDate = parsedRentDate;
@@ -695,6 +712,8 @@ const updateCoworkingClient = async (req, res, next) => {
       "ratePerOpenDesk",
       "ratePerCabinDesk",
       "annualIncrement",
+      "brokerage",
+      "internalLead",
       "perDeskMeetingCredits",
       "totalMeetingCredits",
       "startDate",
@@ -716,6 +735,14 @@ const updateCoworkingClient = async (req, res, next) => {
         updateData[field] = req.body[field];
       }
     });
+
+    if (brokerage !== undefined && brokerage !== "") {
+      updateData.brokerage = Number(brokerage);
+    }
+
+    if (internalLead !== undefined) {
+      updateData.internalLead = String(internalLead).trim();
+    }
 
     if (unitExists) {
       updateData.building = unitExists.building;

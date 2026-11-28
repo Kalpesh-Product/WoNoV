@@ -11,6 +11,7 @@ const PrimaryButton = ({
   disabled,
   padding,
   className,
+  icon: Icon,
   isLoading, // New prop for showing the spinner
 }) => {
 
@@ -28,6 +29,7 @@ const PrimaryButton = ({
         fontSize ? fontSize : "text-content leading-5"
       } ${externalStyles} ${padding ? padding : "px-8 py-2"} ${className}`}
       onClick={handleSubmit}>
+      {Icon ? <Icon aria-hidden="true" /> : null}
       {isLoading && <CircularProgress size={16} color="#1E3D73" />}{" "}
       {/* Spinner */}
       <span className="whitespace-nowrap">

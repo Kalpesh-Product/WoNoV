@@ -6,8 +6,6 @@ import {
   MenuItem,
   CircularProgress,
 } from "@mui/material";
-import PrimaryButton from "../../../components/PrimaryButton";
-import SecondaryButton from "../../../components/SecondaryButton";
 import { State, City } from "country-state-city";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
@@ -15,13 +13,31 @@ import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { toast } from "sonner";
-import PageFrame from "../../../components/Pages/PageFrame";
+import {
+  FormActions,
+  FormLayout,
+  FormSection,
+} from "../../../components/Forms/FormLayout";
 import useAuth from "../../../hooks/useAuth";
+import {
+  LuBoxes,
+  LuContactRound,
+  LuShieldCheck,
+  LuUserRound,
+  LuUsersRound,
+} from "react-icons/lu";
 
 const SOURCING_MANAGER_DEPARTMENT_IDS = new Set([
   "67b2cf85b9b6ed5cedeb9a2e",
   "6798ba9de469e809084e2494",
 ]);
+
+const VIRTUAL_OFFICE_DRAFT_DATE_FIELDS = [
+  "startDate",
+  "endDate",
+  "rentDate",
+  "nextIncrement",
+];
 
 const canCreateVirtualOfficeSourcingOption = (user) => {
   const departments = Array.isArray(user?.departments) ? user.departments : [];
@@ -61,6 +77,7 @@ const VirtualOfficeForm = () => {
     handleSubmit,
     reset,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -103,6 +120,13 @@ const VirtualOfficeForm = () => {
     },
   });
   const { auth } = useAuth();
+  const draftStorageKey = useMemo(
+    () =>
+      `virtual-office-client-draft:${
+        auth?.user?._id || auth?.user?.id || "current-user"
+      }`,
+    [auth?.user?._id, auth?.user?.id],
+  );
   const canCreateSourcingOption = useMemo(
     () => canCreateVirtualOfficeSourcingOption(auth?.user),
     [auth?.user],
@@ -294,6 +318,7 @@ const VirtualOfficeForm = () => {
         });
         queryClient.invalidateQueries({ queryKey: ["clientDetails"] });
         toast.success(data.message);
+        window.localStorage.removeItem(draftStorageKey);
         reset();
         setNewSourcingOption("");
       },
@@ -304,6 +329,24 @@ const VirtualOfficeForm = () => {
               );
             },
     });
+
+  useEffect(() => {
+    try {
+      const savedDraft = window.localStorage.getItem(draftStorageKey);
+      if (!savedDraft) return;
+
+      const parsedDraft = JSON.parse(savedDraft);
+      VIRTUAL_OFFICE_DRAFT_DATE_FIELDS.forEach((fieldName) => {
+        if (parsedDraft[fieldName]) {
+          parsedDraft[fieldName] = dayjs(parsedDraft[fieldName]);
+        }
+      });
+      reset(parsedDraft);
+      setNewSourcingOption(parsedDraft.channel || "");
+    } catch {
+      window.localStorage.removeItem(draftStorageKey);
+    }
+  }, [draftStorageKey, reset]);
 
   const onSubmit = (data) => {
     const payload = {
@@ -359,7 +402,21 @@ const VirtualOfficeForm = () => {
   };
 
   const handleReset = () => {
+    window.localStorage.removeItem(draftStorageKey);
     reset();
+    setNewSourcingOption("");
+  };
+
+  const handleSaveDraft = () => {
+    try {
+      window.localStorage.setItem(
+        draftStorageKey,
+        JSON.stringify(getValues()),
+      );
+      toast.success("Virtual office client draft saved");
+    } catch {
+      toast.error("Unable to save draft");
+    }
   };
 
   // const [selectedValue, setSelectedValue] = useState("Coworking");
@@ -369,25 +426,22 @@ const VirtualOfficeForm = () => {
   // };
 
   return (
-    <div className="p-4">
-      <PageFrame>
-        <div className="flex flex-col gap-4 overflow-y-auto">
-          <div>
-            <span className="text-title uppercase text-primary font-pmedium">
-              virtual-office client onboarding
-            </span>
-          </div>
-          <form onSubmit={handleSubmit(onSubmit)} className="">
-            <div className="flex gap-4"></div>
-            <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
-              <div>
-                {/* Section: Basic Information */}
-                <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">
-                    Client Information
-                  </span>
-                </div>
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
+    <FormLayout
+      title="Virtual-Office Client Onboarding"
+      icon={LuUsersRound}
+      onSubmit={handleSubmit(onSubmit)}
+      actions={
+        <FormActions
+          onReset={handleReset}
+          onSaveDraft={handleSaveDraft}
+          isSubmitting={isMutateClientPending}
+        />
+      }
+    >
+      <FormSection
+        title="Client Information"
+        icon={LuUserRound}
+      >
                   <Controller
                     name="clientName"
                     control={control}
@@ -654,16 +708,11 @@ const VirtualOfficeForm = () => {
                       )}
                     />
                   </div>
-                </div>
-              </div>
-              <div>
-                {/* Section: Job Information */}
-                <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">
-                    Space & Desks
-                  </span>
-                </div>
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
+      </FormSection>
+      <FormSection
+        title="Space & Desks"
+        icon={LuBoxes}
+      >
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <Controller
                       name="building"
@@ -889,35 +938,7 @@ const VirtualOfficeForm = () => {
                       />
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    <Controller
-                      name="brokerage"
-                      control={control}
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          size="small"
-                          type="number"
-                          label="Brokerage"
-                          inputProps={{ min: 0 }}
-                          fullWidth
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="internalLead"
-                      control={control}
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          size="small"
-                          label="Internal Lead"
-                          fullWidth
-                        />
-                      )}
-                    />
-                  </div>
-                  <Controller
+                  {/* <Controller
                     name="annualIncrement"
                     control={control}
                     rules={{ required: "Annual Increment is required" }}
@@ -966,15 +987,104 @@ const VirtualOfficeForm = () => {
                         fullWidth
                       />
                     )}
-                  />
-                </div>
-              </div>
+                  /> */}
+                <div className="flex gap-2 w-full">
+                  <div className="flex-1 min-w-0">
+                  {/* Annual Increment */}
+                    <Controller
+                      name="annualIncrement"
+                      control={control}
+                      rules={{ required: "Annual Increment is required" }}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          label="Annual Increment"
+                          type="number"
+                          error={!!errors.annualIncrement}
+                          helperText={errors.annualIncrement?.message}
+                          fullWidth
+                        />
+                      )}
+                    />
+                  </div>
 
-              <div>
-                <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">KYC</span>
+                  {/* Per Desk Meeting Credits */}
+                  <div className="flex-1 min-w-0">
+                    <Controller
+                      name="perDeskMeetingCredits"
+                      control={control}
+                      rules={{
+                        required: "Per Desk Meeting Credits is required",
+                      }}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          type="number"
+                          error={!!errors.perDeskMeetingCredits}
+                          helperText={errors.perDeskMeetingCredits?.message}
+                          label="Per Desk Meeting Credits"
+                          fullWidth
+                        />
+                      )}
+                    />
+                  </div>
+
+                  {/* Total Meeting Credits */}
+                  <div className="flex-1 min-w-0">
+                    <Controller
+                      name="totalMeetingCredits"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          type="number"
+                          disabled
+                          label="Total Meeting Credits"
+                          fullWidth
+                        />
+                      )}
+                    />
+                  </div>
                 </div>
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <Controller
+                      name="brokerage"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          type="number"
+                          label="Brokerage"
+                          inputProps={{ min: 0 }}
+                          fullWidth
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="internalLead"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          label="Internal Lead"
+                          fullWidth
+                        />
+                      )}
+                    />
+                  </div>
+      </FormSection>
+
+      <FormSection
+        title="KYC"
+        icon={LuShieldCheck}
+        columns={2}
+        fullWidthLastChild
+      >
                   <LocalizationProvider dateAdapter={AdapterDayjs}>
                     <Controller
                       name="startDate"
@@ -1087,15 +1197,13 @@ const VirtualOfficeForm = () => {
                       )}
                     />
                   </LocalizationProvider>
-                </div>
-              </div>
-              <div>
-                <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">
-                    Points Of Contact
-                  </span>
-                </div>
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
+      </FormSection>
+      <FormSection
+        title="Points Of Contact"
+        icon={LuContactRound}
+        columns={2}
+        fullWidthLastChild
+      >
                   <Controller
                     name="localPocName"
                     control={control}
@@ -1206,24 +1314,8 @@ const VirtualOfficeForm = () => {
                       )}
                     />
                   </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Submit Button */}
-            <div className="flex items-center justify-center gap-4 mt-4">
-              <PrimaryButton
-                type="submit"
-                title={"Submit"}
-                isLoading={isMutateClientPending}
-                disabled={isMutateClientPending}
-              />
-              <SecondaryButton handleSubmit={handleReset} title={"Reset"} />
-            </div>
-          </form>
-        </div>
-      </PageFrame>
-    </div>
+      </FormSection>
+    </FormLayout>
   );
 };
 

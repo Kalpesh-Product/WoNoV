@@ -12,7 +12,6 @@ import {
   Select,
 } from "@mui/material";
 import PrimaryButton from "../../../components/PrimaryButton";
-import SecondaryButton from "../../../components/SecondaryButton";
 import {
   DatePicker,
   LocalizationProvider,
@@ -25,12 +24,23 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import useAuth from "../../../hooks/useAuth";
-import PageFrame from "../../../components/Pages/PageFrame";
+import { FormLayout, FormSection } from "../../../components/Forms/FormLayout";
+import {
+  LuCalendarClock,
+  LuRotateCcw,
+  LuSave,
+  LuSend,
+  LuUserPlus,
+  LuUserRound,
+  LuUsers,
+} from "react-icons/lu";
 import {
   isAlphanumeric,
   isValidPhoneNumber,
   noOnlyWhitespace,
 } from "../../../utils/validators";
+
+const ADD_VISITOR_DRAFT_KEY = "addVisitorDraft";
 
 const AddVisitor = () => {
   const uniqueId = () =>
@@ -42,6 +52,7 @@ const AddVisitor = () => {
     reset,
     watch,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm({
     mode: "onChange",
@@ -312,23 +323,62 @@ const AddVisitor = () => {
     reset();
   };
 
+  const handleSaveAsDraft = () => {
+    try {
+      window.localStorage.setItem(
+        ADD_VISITOR_DRAFT_KEY,
+        JSON.stringify(getValues()),
+      );
+      toast.success("Visitor draft saved");
+    } catch {
+      toast.error("Unable to save draft");
+    }
+  };
+
   useEffect(() => {
     setValue("checkIn", dayjs(new Date()));
   }, [setValue]);
 
   return (
-    <div className=" p-4">
-      <PageFrame>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 gap-4">
-            <div>
-              {/* Section: Basic Information */}
-              <div className="py-4 border-b-default border-borderGray">
-                <span className="text-subtitle font-pmedium">
-                  Visitor Details
-                </span>
-              </div>
-              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-4 gap-4 p-4 ">
+    <FormLayout
+      title="Add Visitor"
+      icon={LuUserPlus}
+      onSubmit={handleSubmit(onSubmit)}
+      actions={
+        <div className="shared-form-actions">
+          <button
+            type="button"
+            className="shared-form-action-button shared-form-reset-button"
+            onClick={handleReset}
+          >
+            <LuRotateCcw aria-hidden="true" />
+            <span>Reset</span>
+          </button>
+          <div className="shared-form-primary-actions">
+            <button
+              type="button"
+              className="shared-form-action-button shared-form-draft-button"
+              onClick={handleSaveAsDraft}
+            >
+              <LuSave aria-hidden="true" />
+              <span>Save as Draft</span>
+            </button>
+            <PrimaryButton
+              type="submit"
+              title="Submit"
+              icon={LuSend}
+              isLoading={isMutateVisitor}
+              disabled={
+                isMutateVisitor || isCheckingVisitor || Boolean(existingVisitor)
+              }
+            />
+          </div>
+        </div>
+      }
+    >
+      <FormSection title="Visitor Details" icon={LuUserRound}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:col-span-3">
                 <Controller
                   name="firstName"
                   control={control}
@@ -371,6 +421,7 @@ const AddVisitor = () => {
                     />
                   )}
                 />
+          </div>
                 <Controller
                   name="phoneNumber"
                   control={control}
@@ -408,7 +459,7 @@ const AddVisitor = () => {
                 />
 
                 {debouncedVisitorPhone && (
-                  <div className="md:col-span-4">
+                  <div className="md:col-span-3" style={{ order: 99 }}>
                     {isCheckingVisitor ? (
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <CircularProgress size={16} />
@@ -570,14 +621,11 @@ const AddVisitor = () => {
                     />
                   )}
                 />
-              </div>
-            </div>
-            <div>
-              <div className="py-4 border-b-default border-borderGray">
-                <span className="text-subtitle font-pmedium">To Meet</span>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-6 gap-4 p-4">
+        </div>
+      </FormSection>
+
+      <FormSection title="To Meet" icon={LuUsers}>
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
                 <Controller
                   name="location"
                   control={control}
@@ -772,16 +820,11 @@ const AddVisitor = () => {
                     );
                   }}
                 />
-              </div>
-              
+                      </div>
+      </FormSection>
 
-              <div>
-                <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">
-                    Date & Time
-                  </span>
-                </div>
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-3 gap-4 p-4 ">
+      <FormSection title="Date & Time" icon={LuCalendarClock}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <LocalizationProvider dateAdapter={AdapterDayjs}>
                     <Controller
                       name="scheduledDate"
@@ -885,25 +928,8 @@ const AddVisitor = () => {
                     />
                   </LocalizationProvider>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Submit Button */}
-          <div className="flex items-center justify-center gap-4">
-            <PrimaryButton
-              type="submit"
-              title={"Submit"}
-              isLoading={isMutateVisitor}
-              disabled={
-                isMutateVisitor || isCheckingVisitor || Boolean(existingVisitor)
-              }
-            />
-            <SecondaryButton handleSubmit={handleReset} title={"Reset"} />
-          </div>
-        </form>
-      </PageFrame>
-    </div>
+      </FormSection>
+    </FormLayout>
   );
 };
 

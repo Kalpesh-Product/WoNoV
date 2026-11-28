@@ -9,6 +9,7 @@ const SecondaryButton = ({
   fontSize,
   externalStyles,
   disabled,
+  icon: Icon,
   isLoading, // New prop for showing the spinner
 }) => {
   return (
@@ -25,6 +26,7 @@ const SecondaryButton = ({
       } ${externalStyles}`}
       onClick={handleSubmit}
     >
+      {Icon ? <Icon aria-hidden="true" /> : null}
       {isLoading && <CircularProgress size={16} color="#1E3D73" />}{" "}
       {/* Spinner */}
       <span>{isLoading ? `${title}ing` : title}</span>

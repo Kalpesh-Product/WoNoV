@@ -1,11 +1,4 @@
-import {
-  Autocomplete,
-  Avatar,
-  Button,
-  Chip,
-  MenuItem,
-  TextField,
-} from "@mui/material";
+import { Autocomplete, MenuItem, TextField } from "@mui/material";
 import React, { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import useAuth from "../../../../hooks/useAuth";
@@ -18,12 +11,26 @@ import { toast } from "sonner";
 import { useDispatch, useSelector } from "react-redux";
 import dayjs from "dayjs";
 import humanDate from "../../../../utils/humanDateForamt";
-import DetalisFormatted from "../../../../components/DetalisFormatted";
+import {
+  DetailLayout,
+  DetailRow,
+  DetailSection,
+} from "../../../../components/Forms/FormLayout";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { setSelectedClient } from "../../../../redux/slices/clientSlice";
 import { setClientData } from "../../../../redux/slices/salesSlice";
 import { useLocation, useParams } from "react-router-dom";
 import SalesDashboardPageSkeleton from "../SalesDashboardPageSkeleton";
+import {
+  LuBuilding2,
+  LuContactRound,
+  LuFileText,
+  LuPencil,
+  LuRotateCcw,
+  LuSend,
+  LuUserRound,
+  LuX,
+} from "react-icons/lu";
 
 const BOOKING_TYPE_OPTIONS = ["Direct", "SPV Booking"];
 const SOURCING_MANAGER_DEPARTMENT_IDS = new Set([
@@ -262,6 +269,8 @@ const ClientDetails = () => {
       ratePerOpenDesk: 0,
       ratePerCabinDesk: 0,
       annualIncrement: 0,
+      brokerage: 0,
+      internalLead: "",
       perDeskMeetingCredits: 0,
       totalMeetingCredits: 0,
       startDate: "",
@@ -501,6 +510,8 @@ const ClientDetails = () => {
         ratePerOpenDesk: selectedClient.ratePerOpenDesk,
         ratePerCabinDesk: selectedClient.ratePerCabinDesk,
         annualIncrement: selectedClient.annualIncrement,
+        brokerage: selectedClient.brokerage ?? 0,
+        internalLead: selectedClient.internalLead || "",
         perDeskMeetingCredits: selectedClient.perDeskMeetingCredits,
         totalMeetingCredits: selectedClient.totalMeetingCredits,
         startDate: selectedClient.startDate,
@@ -589,6 +600,8 @@ const ClientDetails = () => {
       ratePerCabinDesk: Number(data.ratePerCabinDesk) || 0,
       ratePerOpenDesk: Number(data.ratePerOpenDesk) || 0,
       annualIncrement: Number(data.annualIncrement) || 0,
+      brokerage: Number(data.brokerage) || 0,
+      internalLead: String(data.internalLead || "").trim(),
       perDeskMeetingCredits: Number(data.perDeskMeetingCredits) || 0,
       totalMeetingCredits: Number(data.totalMeetingCredits) || 0,
       startDate: data.startDate,
@@ -676,6 +689,8 @@ const ClientDetails = () => {
         ratePerOpenDesk: selectedClient.ratePerOpenDesk,
         ratePerCabinDesk: selectedClient.ratePerCabinDesk,
         annualIncrement: selectedClient.annualIncrement,
+        brokerage: selectedClient.brokerage ?? 0,
+        internalLead: selectedClient.internalLead || "",
         perDeskMeetingCredits: selectedClient.perDeskMeetingCredits,
         totalMeetingCredits: selectedClient.totalMeetingCredits,
         startDate: selectedClient.startDate,
@@ -720,858 +735,634 @@ const ClientDetails = () => {
     </LocalizationProvider>
   );
 
+  const detailValue = (value) =>
+    value === null || value === undefined || value === "" ? "—" : value;
+
+  const pocFields = [
+    { name: "localPocName", label: "Local POC Name" },
+    { name: "localPocEmail", label: "Local POC Email" },
+    { name: "localPocPhone", label: "Local POC Phone" },
+    { name: "hoPocName", label: "HO POC Name" },
+    { name: "hoPocEmail", label: "HO POC Email" },
+    { name: "hoPocPhone", label: "HO POC Phone" },
+  ];
+
+  const customerDetailRows = [
+    { label: "Client Name", value: control._defaultValues.clientName },
+    { label: "Sector", value: control._defaultValues.sector },
+    { label: "HO City", value: control._defaultValues.hoCity },
+    { label: "HO State", value: control._defaultValues.hoState },
+    { label: "Booking Type", value: control._defaultValues.bookingType },
+    { label: "Revenue", value: formatExactNumber(computedRevenue) },
+    { label: "Sourcing", value: control._defaultValues.channel },
+    {
+      label: "Client Status",
+      value: control._defaultValues.currentStatus || "In Progress",
+    },
+  ];
+
+  const companyDetailRows = [
+    { label: "Building Name", value: control._defaultValues.buildingName },
+    { label: "Unit No", value: control._defaultValues.unitNo },
+    {
+      label: "Billing Frequency",
+      value: control._defaultValues.billingFrequency,
+    },
+    { label: "Client Type", value: control._defaultValues.clientType },
+    { label: "Cabin Desks", value: control._defaultValues.cabinDesks },
+    {
+      label: "Cabin Desk Rate",
+      value: control._defaultValues.ratePerCabinDesk,
+    },
+    { label: "Open Desks", value: control._defaultValues.openDesks },
+    { label: "Open Desk Rate", value: control._defaultValues.ratePerOpenDesk },
+    { label: "No of Desk", value: computedNoOfDesks },
+    { label: "Invoice Rate", value: formatExactNumber(computedCurrentRate) },
+    { label: "Brokerage", value: control._defaultValues.brokerage },
+    { label: "Internal Lead", value: control._defaultValues.internalLead },
+    {
+      label: "Company Status",
+      value: control._defaultValues.isActive ? "Active" : "Inactive",
+    },
+  ];
+
+  const agreementDetailRows = [
+    {
+      label: "Annual Increment",
+      value: `${control._defaultValues.annualIncrement || 0}%`,
+    },
+    {
+      label: "Per Desk Meeting Credits",
+      value: control._defaultValues.perDeskMeetingCredits,
+    },
+    {
+      label: "Total Meeting Credits",
+      value: control._defaultValues.totalMeetingCredits,
+    },
+    { label: "Lock-in Period", value: `${computedLockinPeriod} months` },
+    {
+      label: "Start Date",
+      value: humanDate(control._defaultValues.startDate),
+    },
+    { label: "End Date", value: humanDate(control._defaultValues.endDate) },
+    { label: "Rent Date", value: humanDate(computedRentDate) },
+    {
+      label: "Next Increment",
+      value: humanDate(control._defaultValues.nextIncrement),
+    },
+    { label: "Total Term", value: `${computedTotalTerm} months` },
+    { label: "Agreement Expiry", value: computedAgreementExpiry },
+  ];
+
+  const pocDetailRows = pocFields.map(({ name, label }) => ({
+    label,
+    value: control._defaultValues[name],
+  }));
+
   if (isClientLoading) {
     return <SalesDashboardPageSkeleton tableTitle="Client Details" />;
   }
 
   return (
-    <div className="border-2 border-gray-200 p-4 rounded-md flex flex-col gap-4 ">
-      <div className="flex justify-between items-center">
-        <div>
-          <span className="text-subtitle font-pmedium text-primary">
-            Client Details
-          </span>
-        </div>
-        <div>
-          <PrimaryButton
-            handleSubmit={handleEditToggle}
-            title={isEditing ? "Cancel" : "Edit"}
-            disabled={!selectedClient?._id || isClientLoading}
-          />
-        </div>
-      </div>
-
-      <div className="h-[51vh] overflow-y-auto">
-        <div>
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Section:  Customer Details */}
-              <div>
-                <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">
-                    Customer Details
-                  </span>
-                </div>
-
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                  {[
-                    "clientName",
-                    "sector",
-                    "hoCity",
-                    "hoState",
-                    "bookingType",
-                    "revenue",
-                    "channel",
-                    "currentStatus",
-                  ].map((fieldKey) => (
-                    <div key={fieldKey}>
-                      {isEditing ? (
-                        <Controller
-                          name={fieldKey}
-                          control={control}
-                          render={({ field }) =>
-                            fieldKey === "bookingType" ? (
-                              <TextField
-                                {...field}
-                                select
-                                size="small"
-                                label="Booking Type"
-                                fullWidth
-                              >
-                                {/* {bookingTypeOptions.map((bookingType) => (
-                                 */}
-                                {BOOKING_TYPE_OPTIONS.map((bookingType) => (
-                                  <MenuItem
-                                    key={bookingType}
-                                    value={bookingType}
-                                  >
-                                    {bookingType}
-                                  </MenuItem>
-                                ))}
-                              </TextField>
-                            ) : fieldKey === "revenue" ? (
-                              <TextField
-                                {...field}
-                                value={formatExactNumber(computedRevenue)}
-                                disabled
-                                size="small"
-                                label="Revenue"
-                                fullWidth
-                              />
-                            ) : fieldKey === "channel" ? (
-                              <Autocomplete
-                                freeSolo={canCreateSourcingOption}
-                                selectOnFocus
-                                clearOnBlur={false}
-                                handleHomeEndKeys
-                                options={sourcingOptions}
-                                value={field.value || null}
-                                inputValue={sourcingInput}
-                                onInputChange={(_event, value, reason) => {
-                                  if (reason !== "reset")
-                                    setSourcingInput(value);
-                                }}
-                                onChange={(_event, value) => {
-                                  const selected = String(
-                                    typeof value === "object"
-                                      ? value.inputValue
-                                      : value || "",
-                                  ).trim();
-                                  field.onChange(selected);
-                                  setSourcingInput(selected);
-                                  if (
-                                    canCreateSourcingOption &&
-                                    selected &&
-                                    !sourcingOptions.some(
-                                      (option) =>
-                                        option.toLowerCase() ===
-                                        selected.toLowerCase(),
-                                    )
-                                  ) {
-                                    saveSourcingOption(selected);
-                                  }
-                                }}
-                                filterOptions={(options, params) => {
-                                  const typedValue = params.inputValue.trim();
-                                  const filteredOptions = options.filter(
-                                    (option) =>
-                                      option
-                                        .toLowerCase()
-                                        .includes(typedValue.toLowerCase()),
-                                  );
-                                  const alreadyExists = options.some(
-                                    (option) =>
-                                      option.toLowerCase() ===
-                                      typedValue.toLowerCase(),
-                                  );
-                                  if (
-                                    canCreateSourcingOption &&
-                                    typedValue &&
-                                    !alreadyExists
-                                  ) {
-                                    filteredOptions.push({
-                                      inputValue: typedValue,
-                                      label: `+ Add "${typedValue}"`,
-                                    });
-                                  }
-                                  return filteredOptions;
-                                }}
-                                getOptionLabel={(option) =>
-                                  typeof option === "string"
-                                    ? option
-                                    : option.label || ""
-                                }
-                                renderOption={(props, option) => (
-                                  <li
-                                    {...props}
-                                    key={option.inputValue || option}
-                                  >
-                                    {typeof option === "string"
-                                      ? option
-                                      : option.label}
-                                  </li>
-                                )}
-                                renderInput={(params) => (
-                                  <TextField
-                                    {...params}
-                                    size="small"
-                                    label="Sourcing"
-                                    placeholder={
-                                      canCreateSourcingOption
-                                        ? "Select or Add Source"
-                                        : "Select Source"
-                                    }
-                                    fullWidth
-                                  />
-                                )}
-                              />
-                            ) : fieldKey === "currentStatus" ? (
-                              <TextField
-                                {...field}
-                                select
-                                size="small"
-                                label="Current Status"
-                                fullWidth
-                              >
-                                {["In Progress", "Yet to start", "On Hold"].map(
-                                  (option) => (
-                                    <MenuItem key={option} value={option}>
-                                      {option}
-                                    </MenuItem>
-                                  ),
-                                )}
-                              </TextField>
-                            ) : (
-                              <TextField
-                                {...field}
-                                size="small"
-                                label={fieldKey
-                                  .replace(/([A-Z])/g, " $1")
-                                  .replace(/^./, (str) => str.toUpperCase())}
-                                fullWidth
-                              />
-                            )
-                          }
+    <DetailLayout
+      title="Client Details"
+      icon={LuUserRound}
+      actions={
+        <PrimaryButton
+          handleSubmit={handleEditToggle}
+          title={isEditing ? "Cancel" : "Edit"}
+          icon={isEditing ? LuX : LuPencil}
+          disabled={!selectedClient?._id || isClientLoading}
+        />
+      }
+    >
+      <form onSubmit={handleSubmit(onSubmit)} className="shared-form">
+        <div className="shared-form-section-grid">
+          {/* Section: Customer Details */}
+          <DetailSection title="Customer Details" icon={LuUserRound}>
+            {isEditing ? (
+              <div className="shared-form-card-body shared-form-card-body--two-columns">
+                {[
+                  "clientName",
+                  "sector",
+                  "hoCity",
+                  "hoState",
+                  "bookingType",
+                  "revenue",
+                  "channel",
+                  "currentStatus",
+                ].map((fieldKey) => (
+                  <Controller
+                    key={fieldKey}
+                    name={fieldKey}
+                    control={control}
+                    render={({ field }) =>
+                      fieldKey === "bookingType" ? (
+                        <TextField
+                          {...field}
+                          select
+                          size="small"
+                          label="Booking Type"
+                          fullWidth
+                        >
+                          {BOOKING_TYPE_OPTIONS.map((bookingType) => (
+                            <MenuItem key={bookingType} value={bookingType}>
+                              {bookingType}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      ) : fieldKey === "revenue" ? (
+                        <TextField
+                          {...field}
+                          value={formatExactNumber(computedRevenue)}
+                          disabled
+                          size="small"
+                          label="Revenue"
+                          fullWidth
                         />
-                      ) : (
-                        <div className="py-2 flex justify-between items-center gap-2">
-                          <div className="w-[100%] justify-start flex">
-                            <span className="font-pmedium text-gray-600 text-content">
-                              {fieldKey === "currentStatus"
-                                ? "Current Status"
-                                : fieldKey === "channel"
-                                  ? "Sourcing"
-                                  : fieldKey
-                                      .replace(/([A-Z])/g, " $1")
-                                      .replace(/^./, (str) =>
-                                        str.toUpperCase(),
-                                      )}
-                            </span>{" "}
-                          </div>
-                          <div className="">
-                            <span>:</span>
-                          </div>
-                          <div className="w-full">
-                            <span className="text-gray-500">
-                              {fieldKey === "revenue"
-                                ? formatExactNumber(computedRevenue)
-                                : fieldKey === "channel"
-                                  ? control._defaultValues.channel || "N/A"
-                                  : fieldKey === "currentStatus"
-                                    ? control._defaultValues.currentStatus ||
-                                      "In Progress"
-                                    : control._defaultValues[fieldKey] || "N/A"}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-              {/* Section: Company Details */}
-              <div>
-                <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">
-                    Company Details
-                  </span>
-                </div>
-
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                  {isEditing ? (
-                    <>
-                      <Controller
-                        name="building"
-                        control={control}
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            onChange={(event) => {
-                              if (event.target.value !== field.value) {
-                                setValue("unit", "");
+                      ) : fieldKey === "channel" ? (
+                        <Autocomplete
+                          freeSolo={canCreateSourcingOption}
+                          selectOnFocus
+                          clearOnBlur={false}
+                          handleHomeEndKeys
+                          options={sourcingOptions}
+                          value={field.value || null}
+                          inputValue={sourcingInput}
+                          onInputChange={(_event, value, reason) => {
+                            if (reason !== "reset") setSourcingInput(value);
+                          }}
+                          onChange={(_event, value) => {
+                            const selected = String(
+                              typeof value === "object"
+                                ? value.inputValue
+                                : value || "",
+                            ).trim();
+                            field.onChange(selected);
+                            setSourcingInput(selected);
+                            if (
+                              canCreateSourcingOption &&
+                              selected &&
+                              !sourcingOptions.some(
+                                (option) =>
+                                  option.toLowerCase() ===
+                                  selected.toLowerCase(),
+                              )
+                            ) {
+                              saveSourcingOption(selected);
+                            }
+                          }}
+                          filterOptions={(options, params) => {
+                            const typedValue = params.inputValue.trim();
+                            const filteredOptions = options.filter((option) =>
+                              option
+                                .toLowerCase()
+                                .includes(typedValue.toLowerCase()),
+                            );
+                            const alreadyExists = options.some(
+                              (option) =>
+                                option.toLowerCase() ===
+                                typedValue.toLowerCase(),
+                            );
+                            if (
+                              canCreateSourcingOption &&
+                              typedValue &&
+                              !alreadyExists
+                            ) {
+                              filteredOptions.push({
+                                inputValue: typedValue,
+                                label: `+ Add "${typedValue}"`,
+                              });
+                            }
+                            return filteredOptions;
+                          }}
+                          getOptionLabel={(option) =>
+                            typeof option === "string"
+                              ? option
+                              : option.label || ""
+                          }
+                          renderOption={(props, option) => (
+                            <li {...props} key={option.inputValue || option}>
+                              {typeof option === "string"
+                                ? option
+                                : option.label}
+                            </li>
+                          )}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              size="small"
+                              label="Sourcing"
+                              placeholder={
+                                canCreateSourcingOption
+                                  ? "Select or Add Source"
+                                  : "Select Source"
                               }
-                              field.onChange(event);
-                            }}
-                            select
-                            size="small"
-                            label="Building"
-                            fullWidth
-                          >
-                            <MenuItem value="">Select a Building</MenuItem>
-                            {availableBuildings.map((item) => (
-                              <MenuItem key={item._id} value={item._id}>
-                                {item.buildingName}
-                              </MenuItem>
-                            ))}
-                          </TextField>
-                        )}
-                      />
-                      <Controller
-                        name="unit"
-                        control={control}
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            select
-                            size="small"
-                            label="Unit"
-                            fullWidth
-                          >
-                            <MenuItem value="">Select a Unit</MenuItem>
-                            {filteredUnits.length > 0 ? (
-                              filteredUnits.map((item) => (
-                                <MenuItem key={item._id} value={item._id}>
-                                  {item.unitNo}
-                                </MenuItem>
-                              ))
-                            ) : isUnitsLoading ? (
-                              <MenuItem disabled>Loading units...</MenuItem>
-                            ) : (
-                              <MenuItem disabled>
-                                {selectedBuilding
-                                  ? "No units available"
-                                  : "Select a building first"}
-                              </MenuItem>
-                            )}
-                          </TextField>
-                        )}
-                      />
-                      {[
-                        "billingFrequency",
-                        "clientType",
-                        "cabinDesks",
-                        "ratePerCabinDesk",
-                        "openDesks",
-                        "ratePerOpenDesk",
-                        "noOfDesks",
-                        "currentRate",
-                        "isActive",
-                      ].map((fieldKey) => (
-                        <Controller
-                          key={fieldKey}
-                          name={fieldKey}
-                          control={control}
-                          rules={
-                            fieldKey === "billingFrequency"
-                              ? { required: "Billing Frequency is required" }
-                              : fieldKey === "clientType"
-                                ? { required: "Client Type is required" }
-                                : undefined
-                          }
-                          render={({ field, fieldState }) =>
-                            fieldKey === "billingFrequency" ||
-                            fieldKey === "clientType" ? (
-                              <TextField
-                                {...field}
-                                select
-                                size="small"
-                                label={
-                                  fieldKey === "billingFrequency"
-                                    ? "Billing Frequency"
-                                    : "Client Type"
-                                }
-                                error={!!fieldState.error}
-                                helperText={fieldState.error?.message}
-                                fullWidth
-                              >
-                                {fieldKey === "clientType" && (
-                                  <MenuItem value="">
-                                    Select Client Type
-                                  </MenuItem>
-                                )}
-                                {(fieldKey === "billingFrequency"
-                                  ? ["Monthly", "Half-Yearly"]
-                                  : ["Flexy Desk Client", "Annual Client"]
-                                ).map((option) => (
-                                  <MenuItem key={option} value={option}>
-                                    {option}
-                                  </MenuItem>
-                                ))}
-                              </TextField>
-                            ) : fieldKey === "isActive" ? (
-                              <TextField
-                                {...field}
-                                select
-                                size="small"
-                                label="Company Status"
-                                fullWidth
-                              >
-                                <MenuItem value={true}>Active</MenuItem>
-                                <MenuItem value={false}>Inactive</MenuItem>
-                              </TextField>
-                            ) : fieldKey === "noOfDesks" ? (
-                              <TextField
-                                {...field}
-                                value={computedNoOfDesks}
-                                disabled
-                                size="small"
-                                label="No of Desk"
-                                fullWidth
-                              />
-                            ) : fieldKey === "currentRate" ? (
-                              <TextField
-                                {...field}
-                                value={formatExactNumber(computedCurrentRate)}
-                                disabled
-                                size="small"
-                                label="Invoice Rate"
-                                fullWidth
-                              />
-                            ) : (
-                              <TextField
-                                {...field}
-                                size="small"
-                                label={fieldKey
-                                  .replace(/([A-Z])/g, " $1")
-                                  .replace(/^./, (str) => str.toUpperCase())}
-                                fullWidth
-                              />
-                            )
-                          }
+                              fullWidth
+                            />
+                          )}
                         />
+                      ) : fieldKey === "currentStatus" ? (
+                        <TextField
+                          {...field}
+                          select
+                          size="small"
+                          label="Current Status"
+                          fullWidth
+                        >
+                          {["In Progress", "Yet to start", "On Hold"].map(
+                            (option) => (
+                              <MenuItem key={option} value={option}>
+                                {option}
+                              </MenuItem>
+                            ),
+                          )}
+                        </TextField>
+                      ) : (
+                        <TextField
+                          {...field}
+                          size="small"
+                          label={fieldKey
+                            .replace(/([A-Z])/g, " $1")
+                            .replace(/^./, (str) => str.toUpperCase())}
+                          fullWidth
+                        />
+                      )
+                    }
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="shared-detail-rows">
+                {customerDetailRows.map((row) => (
+                  <DetailRow
+                    key={row.label}
+                    label={row.label}
+                    value={detailValue(row.value)}
+                  />
+                ))}
+              </div>
+            )}
+          </DetailSection>
+
+          {/* Section: Company Details */}
+          <DetailSection title="Company Details" icon={LuBuilding2}>
+            {isEditing ? (
+              <div className="shared-form-card-body shared-form-card-body--two-columns">
+                <Controller
+                  name="building"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      onChange={(event) => {
+                        if (event.target.value !== field.value) {
+                          setValue("unit", "");
+                        }
+                        field.onChange(event);
+                      }}
+                      select
+                      size="small"
+                      label="Building"
+                      fullWidth
+                    >
+                      <MenuItem value="">Select a Building</MenuItem>
+                      {availableBuildings.map((item) => (
+                        <MenuItem key={item._id} value={item._id}>
+                          {item.buildingName}
+                        </MenuItem>
                       ))}
-                    </>
-                  ) : (
-                    [
-                      "buildingName",
-                      "unitNo",
-                      "billingFrequency",
-                      "clientType",
-                      "cabinDesks",
-                      "ratePerCabinDesk",
-                      "openDesks",
-                      "ratePerOpenDesk",
-                      "noOfDesks",
-                      "currentRate",
-                      "isActive",
-                    ].map((fieldKey) => (
-                      <div
-                        key={fieldKey}
-                        className="py-2 flex justify-between items-start gap-2"
-                      >
-                        <div className="w-[100%] justify-start flex">
-                          <span className="font-pmedium text-gray-600 text-content">
-                            {fieldKey === "isActive"
-                              ? "Company Status"
-                              : fieldKey === "noOfDesks"
-                                ? "No of Desk"
-                                : fieldKey === "currentRate"
-                                  ? "Invoice Rate"
-                                  : fieldKey
-                                      .replace(/([A-Z])/g, " $1")
-                                      .replace(/^./, (str) =>
-                                        str.toUpperCase(),
-                                      )}
-                          </span>{" "}
-                        </div>
-                        <div className="">
-                          <span>:</span>
-                        </div>
-                        <div className="w-full">
-                          <span className="text-gray-500">
-                            {fieldKey === "isActive"
-                              ? control._defaultValues.isActive
-                                ? "Active"
-                                : "Inactive"
-                              : fieldKey === "noOfDesks"
-                                ? Number(
-                                    control._defaultValues.cabinDesks || 0,
-                                  ) +
-                                  Number(control._defaultValues.openDesks || 0)
-                                : fieldKey === "currentRate"
-                                  ? formatExactNumber(computedCurrentRate)
-                                  : control._defaultValues[fieldKey] || "N/A"}
-                          </span>
-                        </div>
-                      </div>
-                    ))
+                    </TextField>
                   )}
-                </div>
-              </div>
-              <div>
-                <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">
-                    Agreement Details
-                  </span>
-                </div>
-
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                  {/* Annual Increment */}
-                  <div>
-                    {isEditing ? (
+                />
+                <Controller
+                  name="unit"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      select
+                      size="small"
+                      label="Unit"
+                      fullWidth
+                    >
+                      <MenuItem value="">Select a Unit</MenuItem>
+                      {filteredUnits.length > 0 ? (
+                        filteredUnits.map((item) => (
+                          <MenuItem key={item._id} value={item._id}>
+                            {item.unitNo}
+                          </MenuItem>
+                        ))
+                      ) : isUnitsLoading ? (
+                        <MenuItem disabled>Loading units...</MenuItem>
+                      ) : (
+                        <MenuItem disabled>
+                          {selectedBuilding
+                            ? "No units available"
+                            : "Select a building first"}
+                        </MenuItem>
+                      )}
+                    </TextField>
+                  )}
+                />
+                {[
+                  ["billingFrequency", "clientType"],
+                  ["cabinDesks", "ratePerCabinDesk", "openDesks", "ratePerOpenDesk"],
+                  ["noOfDesks", "currentRate", "brokerage"],
+                  ["internalLead", "isActive"],
+                ].map((fieldGroup) => (
+                  <div
+                    key={fieldGroup.join("-")}
+                    className={`shared-form-inline-fields shared-form-inline-fields--${
+                      fieldGroup.length === 4
+                        ? "four"
+                        : fieldGroup.length === 3
+                          ? "three"
+                          : "two"
+                    }`}
+                  >
+                    {fieldGroup.map((fieldKey) => (
                       <Controller
-                        name="annualIncrement"
+                        key={fieldKey}
+                        name={fieldKey}
                         control={control}
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            size="small"
-                            label="Annual Increment"
-                            disabled={isFlexyDeskClient}
-                            fullWidth
-                          />
-                        )}
-                      />
-                    ) : (
-                      <div className="py-2 flex justify-between items-start gap-2">
-                        <div className="w-[100%] justify-start flex">
-                          <span className="font-pmedium text-gray-600 text-content">
-                            Annual Increment
-                          </span>{" "}
-                        </div>
-                        <div className="">
-                          <span>:</span>
-                        </div>
-                        <div className="w-full">
-                          <span className="text-gray-500">
-                            {control._defaultValues.annualIncrement}%
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Per Desk Meeting Credits */}
-                  <div>
-                    {isEditing ? (
-                      <Controller
-                        name="perDeskMeetingCredits"
-                        control={control}
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            size="small"
-                            label="Per Desk Meeting Credits"
-                            disabled={isFlexyDeskClient}
-                            fullWidth
-                          />
-                        )}
-                      />
-                    ) : (
-                      <div className="py-2 flex justify-between items-start gap-2">
-                        <div className="w-[100%] justify-start flex">
-                          <span className="font-pmedium text-gray-600 text-content">
-                            Per Desk Meeting Credits
-                          </span>{" "}
-                        </div>
-                        <div className="">
-                          <span>:</span>
-                        </div>
-                        <div className="w-full">
-                          <span className="text-gray-500">
-                            {control._defaultValues.perDeskMeetingCredits}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Total Meeting Credits */}
-                  <div>
-                    {isEditing ? (
-                      <Controller
-                        name="totalMeetingCredits"
-                        control={control}
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            size="small"
-                            label="Total Meeting Credits"
-                            disabled={isFlexyDeskClient}
-                            fullWidth
-                          />
-                        )}
-                      />
-                    ) : (
-                      <div className="py-2 flex justify-between items-start gap-2">
-                        <div className="w-[100%] justify-start flex">
-                          <span className="font-pmedium text-gray-600 text-content">
-                            Total Meeting Credits
-                          </span>{" "}
-                        </div>
-                        <div className="">
-                          <span>:</span>
-                        </div>
-                        <div className="w-full">
-                          <span className="text-gray-500">
-                            {control._defaultValues.totalMeetingCredits}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Start Date */}
-                  <div>
-                    {isEditing ? (
-                      <Controller
-                        name="startDate"
-                        control={control}
-                        render={({ field }) =>
-                          renderDatePickerField(field, "Start Date")
+                        rules={
+                          fieldKey === "billingFrequency"
+                            ? { required: "Billing Frequency is required" }
+                            : fieldKey === "clientType"
+                              ? { required: "Client Type is required" }
+                              : fieldKey === "brokerage"
+                                ? {
+                                    min: {
+                                      value: 0,
+                                      message: "Brokerage cannot be negative",
+                                    },
+                                  }
+                                : undefined
                         }
-                      />
-                    ) : (
-                      <div className="py-2 flex justify-between items-start gap-2">
-                        <div className="w-[100%] justify-start flex">
-                          <span className="font-pmedium text-gray-600 text-content">
-                            Start Date
-                          </span>{" "}
-                        </div>
-                        <div className="">
-                          <span>:</span>
-                        </div>
-                        <div className="w-full">
-                          <span className="text-gray-500">
-                            {humanDate(control._defaultValues.startDate)}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* End Date */}
-                  <div>
-                    {isEditing ? (
-                      <Controller
-                        name="endDate"
-                        control={control}
-                        render={({ field }) =>
-                          renderDatePickerField(field, "End Date")
-                        }
-                      />
-                    ) : (
-                      <div className="py-2 flex justify-between items-start gap-2">
-                        <div className="w-[100%] justify-start flex">
-                          <span className="font-pmedium text-gray-600 text-content">
-                            End Date
-                          </span>{" "}
-                        </div>
-                        <div className="">
-                          <span>:</span>
-                        </div>
-                        <div className="w-full">
-                          <span className="text-gray-500">
-                            {humanDate(control._defaultValues.endDate)}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Lock-in Period */}
-                  <div>
-                    {isEditing ? (
-                      <Controller
-                        name="lockinPeriod"
-                        control={control}
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            value={`${computedLockinPeriod} months`}
-                            size="small"
-                            label="Lock-in Period (Months)"
-                            fullWidth
-                            disabled
-                          />
-                        )}
-                      />
-                    ) : (
-                      <div className="py-2 flex justify-between items-start gap-2">
-                        <div className="w-[100%] justify-start flex">
-                          <span className="font-pmedium text-gray-600 text-content">
-                            Lock-in Period
-                          </span>{" "}
-                        </div>
-                        <div className="">
-                          <span>:</span>
-                        </div>
-                        <div className="w-full">
-                          <span className="text-gray-500">
-                            {computedLockinPeriod} months
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Rent Date */}
-                  <div>
-                    {isEditing ? (
-                      <Controller
-                        name="rentDate"
-                        control={control}
-                        render={({ field }) =>
-                          renderDatePickerField(
-                            { ...field, value: computedRentDate },
-                            "Rent Date",
-                            true,
-                          )
-                        }
-                      />
-                    ) : (
-                      <div className="py-2 flex justify-between items-start gap-2">
-                        <div className="w-[100%] justify-start flex">
-                          <span className="font-pmedium text-gray-600 text-content">
-                            Rent Date
-                          </span>{" "}
-                        </div>
-                        <div className="">
-                          <span>:</span>
-                        </div>
-                        <div className="w-full">
-                          <span className="text-gray-500">
-                            {humanDate(computedRentDate)}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Next Increment */}
-                  <div>
-                    {isEditing ? (
-                      <Controller
-                        name="nextIncrement"
-                        control={control}
-                        render={({ field }) =>
-                          renderDatePickerField(field, "Next Increment")
-                        }
-                      />
-                    ) : (
-                      <div className="py-2 flex justify-between items-start gap-2">
-                        <div className="w-[100%] justify-start flex">
-                          <span className="font-pmedium text-gray-600 text-content">
-                            Next Increment
-                          </span>{" "}
-                        </div>
-                        <div className="">
-                          <span>:</span>
-                        </div>
-                        <div className="w-full">
-                          <span className="text-gray-500">
-                            {humanDate(control._defaultValues.nextIncrement)}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Total Term */}
-                  <div>
-                    {isEditing ? (
-                      <TextField
-                        value={`${computedTotalTerm} months`}
-                        size="small"
-                        label="Total Term"
-                        fullWidth
-                        disabled
-                      />
-                    ) : (
-                      <div className="py-2 flex justify-between items-start gap-2">
-                        <div className="w-[100%] justify-start flex">
-                          <span className="font-pmedium text-gray-600 text-content">
-                            Total Term
-                          </span>{" "}
-                        </div>
-                        <div className="">
-                          <span>:</span>
-                        </div>
-                        <div className="w-full">
-                          <span className="text-gray-500">
-                            {computedTotalTerm} months
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Agreement Expiry */}
-                  <div>
-                    {isEditing ? (
-                      <TextField
-                        value={computedAgreementExpiry}
-                        size="small"
-                        label="Agreement Expiry"
-                        fullWidth
-                        disabled
-                      />
-                    ) : (
-                      <div className="py-2 flex justify-between items-start gap-2">
-                        <div className="w-[100%] justify-start flex">
-                          <span className="font-pmedium text-gray-600 text-content">
-                            Agreement Expiry
-                          </span>{" "}
-                        </div>
-                        <div className="">
-                          <span>:</span>
-                        </div>
-                        <div className="w-full">
-                          <span className="text-gray-500">
-                            {computedAgreementExpiry}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div>
-                <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">
-                    POC Details
-                  </span>
-                </div>
-
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                  {[
-                    "localPocName",
-                    "localPocEmail",
-                    "localPocPhone",
-                    "hoPocName",
-                    "hoPocEmail",
-                    "hoPocPhone",
-                  ].map((fieldKey) => (
-                    <div key={fieldKey}>
-                      {isEditing ? (
-                        <Controller
-                          name={fieldKey}
-                          control={control}
-                          render={({ field }) => (
+                        render={({ field, fieldState }) =>
+                          fieldKey === "billingFrequency" ||
+                          fieldKey === "clientType" ? (
+                            <TextField
+                              {...field}
+                              select
+                              size="small"
+                              label={
+                                fieldKey === "billingFrequency"
+                                  ? "Billing Frequency"
+                                  : "Client Type"
+                              }
+                              error={!!fieldState.error}
+                              helperText={fieldState.error?.message}
+                              fullWidth
+                            >
+                              {fieldKey === "clientType" && (
+                                <MenuItem value="">Select Client Type</MenuItem>
+                              )}
+                              {(fieldKey === "billingFrequency"
+                                ? ["Monthly", "Half-Yearly", "Yearly"]
+                                : ["Flexy Desk Client", "Annual Client"]
+                              ).map((option) => (
+                                <MenuItem key={option} value={option}>
+                                  {option}
+                                </MenuItem>
+                              ))}
+                            </TextField>
+                          ) : fieldKey === "isActive" ? (
+                            <TextField
+                              {...field}
+                              select
+                              size="small"
+                              label="Company Status"
+                              fullWidth
+                            >
+                              <MenuItem value={true}>Active</MenuItem>
+                              <MenuItem value={false}>Inactive</MenuItem>
+                            </TextField>
+                          ) : fieldKey === "noOfDesks" ? (
+                            <TextField
+                              {...field}
+                              value={computedNoOfDesks}
+                              disabled
+                              size="small"
+                              label="No of Desk"
+                              fullWidth
+                            />
+                          ) : fieldKey === "currentRate" ? (
+                            <TextField
+                              {...field}
+                              value={formatExactNumber(computedCurrentRate)}
+                              disabled
+                              size="small"
+                              label="Invoice Rate"
+                              fullWidth
+                            />
+                          ) : (
                             <TextField
                               {...field}
                               size="small"
+                              type={
+                                fieldKey === "brokerage" ? "number" : undefined
+                              }
+                              inputProps={
+                                fieldKey === "brokerage"
+                                  ? { min: 0 }
+                                  : undefined
+                              }
                               label={fieldKey
                                 .replace(/([A-Z])/g, " $1")
                                 .replace(/^./, (str) => str.toUpperCase())}
                               fullWidth
                             />
-                          )}
-                        />
-                      ) : (
-                        <div className="py-2 flex justify-between items-start gap-2">
-                          <div className="w-[100%] justify-start flex">
-                            <span className="font-pmedium text-gray-600 text-content">
-                              {fieldKey
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
-                            </span>{" "}
-                          </div>
-                          <div className="">
-                            <span>:</span>
-                          </div>
-                          <div className="w-full">
-                            <span className="text-gray-500">
-                              {control._defaultValues[fieldKey]}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                          )
+                        }
+                      />
+                    ))}
+                  </div>
+                ))}
               </div>
-            </div>
+            ) : (
+              <div className="shared-detail-rows">
+                {companyDetailRows.map((row) => (
+                  <DetailRow
+                    key={row.label}
+                    label={row.label}
+                    value={detailValue(row.value)}
+                  />
+                ))}
+              </div>
+            )}
+          </DetailSection>
 
-            <div className="flex items-center justify-center gap-2 py-4">
-              {isEditing ? (
-                <PrimaryButton
-                  title={"Submit"}
-                  handleSubmit={
-                    isEditing ? handleSubmit(onSubmit) : handleEditToggle
+          {/* Section: Agreement Details */}
+          <DetailSection title="Agreement Details" icon={LuFileText}>
+            {isEditing ? (
+              <div className="shared-form-card-body shared-form-card-body--three-columns shared-form-card-body--full-width-last-child">
+                <Controller
+                  name="annualIncrement"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Annual Increment"
+                      disabled={isFlexyDeskClient}
+                      fullWidth
+                    />
+                  )}
+                />
+                <Controller
+                  name="perDeskMeetingCredits"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Per Desk Meeting Credits"
+                      disabled={isFlexyDeskClient}
+                      fullWidth
+                    />
+                  )}
+                />
+                <Controller
+                  name="totalMeetingCredits"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Total Meeting Credits"
+                      disabled={isFlexyDeskClient}
+                      fullWidth
+                    />
+                  )}
+                />
+                <Controller
+                  name="startDate"
+                  control={control}
+                  render={({ field }) =>
+                    renderDatePickerField(field, "Start Date")
                   }
                 />
-              ) : (
-                ""
-              )}
-              {isEditing && (
-                <SecondaryButton title={"Reset"} handleSubmit={handleReset} />
-              )}
-            </div>
-          </form>
+                <Controller
+                  name="endDate"
+                  control={control}
+                  render={({ field }) =>
+                    renderDatePickerField(field, "End Date")
+                  }
+                />
+                <Controller
+                  name="rentDate"
+                  control={control}
+                  render={({ field }) =>
+                    renderDatePickerField(
+                      { ...field, value: computedRentDate },
+                      "Rent Date",
+                      true,
+                    )
+                  }
+                />
+                <Controller
+                  name="lockinPeriod"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      value={`${computedLockinPeriod} months`}
+                      size="small"
+                      label="Lock-in Period (Months)"
+                      fullWidth
+                      disabled
+                    />
+                  )}
+                />
+                <TextField
+                  value={`${computedTotalTerm} months`}
+                  size="small"
+                  label="Total Term"
+                  fullWidth
+                  disabled
+                />
+                <Controller
+                  name="nextIncrement"
+                  control={control}
+                  render={({ field }) =>
+                    renderDatePickerField(field, "Next Increment")
+                  }
+                />
+                <TextField
+                  value={computedAgreementExpiry}
+                  size="small"
+                  label="Agreement Expiry"
+                  fullWidth
+                  disabled
+                />
+              </div>
+            ) : (
+              <div className="shared-detail-rows">
+                {agreementDetailRows.map((row) => (
+                  <DetailRow
+                    key={row.label}
+                    label={row.label}
+                    value={detailValue(row.value)}
+                  />
+                ))}
+              </div>
+            )}
+          </DetailSection>
+
+          {/* Section: POC Details */}
+          <DetailSection title="POC Details" icon={LuContactRound}>
+            {isEditing ? (
+              <div className="shared-form-card-body shared-form-card-body--two-columns">
+                {pocFields.map(({ name, label }) => (
+                  <Controller
+                    key={name}
+                    name={name}
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label={label}
+                        fullWidth
+                      />
+                    )}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="shared-detail-rows">
+                {pocDetailRows.map((row) => (
+                  <DetailRow
+                    key={row.label}
+                    label={row.label}
+                    value={detailValue(row.value)}
+                  />
+                ))}
+              </div>
+            )}
+          </DetailSection>
         </div>
-      </div>
-    </div>
+
+        {isEditing ? (
+          <div className="shared-form-actions shared-form-actions--end">
+            <SecondaryButton
+              title="Reset"
+              icon={LuRotateCcw}
+              handleSubmit={handleReset}
+            />
+            <div className="shared-form-primary-actions">
+              <PrimaryButton
+                title="Submit"
+                icon={LuSend}
+                handleSubmit={handleSubmit(onSubmit)}
+              />
+            </div>
+          </div>
+        ) : null}
+      </form>
+    </DetailLayout>
   );
 };
 

@@ -4907,6 +4907,32 @@ export const routes = createBrowserRouter([
                         ],
                       },
                       {
+                        path: "mix-bag/clients/flexible-desk/:clientName",
+                        element: <ViewClientLayout />,
+                        children: [
+                          {
+                            path: "client-details",
+                            element: <ClientDetails />,
+                          },
+                          {
+                            path: "desks",
+                            element: <Desks />,
+                          },
+                          {
+                            path: "revenue",
+                            element: <ClientRevenue />,
+                          },
+                          {
+                            path: "members",
+                            element: <ClientMembers />,
+                          },
+                          {
+                            path: "members/view-member/:id",
+                            element: <MemberDetails />,
+                          },
+                        ],
+                      },
+                      {
                         path: "mix-bag/clients/co-working/client-onboarding",
                         element: <ClientOnboarding />,
                       },

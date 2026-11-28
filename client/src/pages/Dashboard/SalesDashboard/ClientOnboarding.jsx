@@ -1,23 +1,39 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
-import { Autocomplete, TextField, Select, MenuItem, CircularProgress } from "@mui/material";
-import PrimaryButton from "../../../components/PrimaryButton";
-import SecondaryButton from "../../../components/SecondaryButton";
+import { Autocomplete, TextField, MenuItem, CircularProgress } from "@mui/material";
 import { State, City } from "country-state-city";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import DetalisFormatted from "../../../components/DetalisFormatted";
-import { useSelector } from "react-redux";
+import dayjs from "dayjs";
 import { toast } from "sonner";
-import PageFrame from "../../../components/Pages/PageFrame";
+import {
+  FormActions,
+  FormLayout,
+  FormSection,
+} from "../../../components/Forms/FormLayout";
 import useAuth from "../../../hooks/useAuth";
+import {
+  LuBoxes,
+  LuContactRound,
+  LuFileText,
+  LuShieldCheck,
+  LuUserPlus,
+  LuUserRound,
+} from "react-icons/lu";
 
 const SOURCING_MANAGER_DEPARTMENT_IDS = new Set([
   "67b2cf85b9b6ed5cedeb9a2e",
   "6798ba9de469e809084e2494",
 ]);
+
+const CO_WORKING_DRAFT_DATE_FIELDS = [
+  "startDate",
+  "endDate",
+  "rentDate",
+  "nextIncrement",
+];
 
 const ClientOnboarding = () => {
   const queryClient = useQueryClient();
@@ -26,6 +42,7 @@ const ClientOnboarding = () => {
     handleSubmit,
     reset,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -63,11 +80,20 @@ const ClientOnboarding = () => {
       securityDeposit: 0,
       billingFrequency: "Monthly",
       clientType: "",
+      brokerage: 0,
+      internalLead: "",
     },
   });
-  const clientsData = useSelector((state) => state.sales.clientsData);
   const [selectedUnit, setSelectedUnit] = useState("");
   const { auth } = useAuth();
+  const isRestoringDraftRef = useRef(false);
+  const draftStorageKey = useMemo(
+    () =>
+      `co-working-client-draft:${
+        auth?.user?._id || auth?.user?.id || "current-user"
+      }`,
+    [auth?.user?._id, auth?.user?.id],
+  );
 
   //-----------------------------------------------------Calculation------------------------------------------------//
   const cabinDesks = useWatch({ control, name: "cabinDesks" });
@@ -196,6 +222,11 @@ const ClientOnboarding = () => {
   }, [selectedBuilding, units]);
 
   useEffect(() => {
+    if (isRestoringDraftRef.current) {
+      isRestoringDraftRef.current = false;
+      return;
+    }
+
     setValue("unit", "");
     setSelectedUnit("");
   }, [selectedBuilding, setValue]);
@@ -225,13 +256,36 @@ const ClientOnboarding = () => {
       },
       onSuccess: (data) => {
         toast.success(data.message);
+        window.localStorage.removeItem(draftStorageKey);
         reset();
+        setSourcingInput("");
       },
       onError: (error) => {
         toast.error(error?.response?.data?.message ||
           error?.message || "Failed to onboard client");
       },
     });
+
+  useEffect(() => {
+    try {
+      const savedDraft = window.localStorage.getItem(draftStorageKey);
+      if (!savedDraft) return;
+
+      const parsedDraft = JSON.parse(savedDraft);
+      CO_WORKING_DRAFT_DATE_FIELDS.forEach((fieldName) => {
+        if (parsedDraft[fieldName]) {
+          parsedDraft[fieldName] = dayjs(parsedDraft[fieldName]);
+        }
+      });
+
+      isRestoringDraftRef.current = true;
+      reset(parsedDraft);
+      setSelectedUnit(parsedDraft.unit || "");
+      setSourcingInput(parsedDraft.channel || "");
+    } catch {
+      window.localStorage.removeItem(draftStorageKey);
+    }
+  }, [draftStorageKey, reset]);
 
   const onSubmit = (data) => {
     mutateClientData({
@@ -240,35 +294,37 @@ const ClientOnboarding = () => {
   };
 
   const handleReset = () => {
+    window.localStorage.removeItem(draftStorageKey);
     reset();
+    setSourcingInput("");
   };
 
-  const [selectedValue, setSelectedValue] = useState("Coworking");
-
-  const handleChange = (event) => {
-    setSelectedValue(event.target.value);
+  const handleSaveDraft = () => {
+    try {
+      window.localStorage.setItem(
+        draftStorageKey,
+        JSON.stringify(getValues()),
+      );
+      toast.success("Co-working client draft saved");
+    } catch {
+      toast.error("Unable to save draft");
+    }
   };
 
   return (
-    <div className="p-4">
-      <PageFrame>
-        <div className="flex flex-col gap-4 overflow-y-auto">
-          <div>
-            <span className="text-title uppercase text-primary font-pmedium">
-              client onboarding
-            </span>
-          </div>
-          <form onSubmit={handleSubmit(onSubmit)} className="">
-            <div className="flex gap-4"></div>
-            <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-3 gap-4">
-              <div>
-                {/* Section: Basic Information */}
-                <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">
-                    Client Information
-                  </span>
-                </div>
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
+    <FormLayout
+      title="Co-Working Client Onboarding"
+      icon={LuUserPlus}
+      onSubmit={handleSubmit(onSubmit)}
+      actions={
+        <FormActions
+          onReset={handleReset}
+          onSaveDraft={handleSaveDraft}
+          isSubmitting={isMutateClientPending}
+        />
+      }
+    >
+      <FormSection title="Client Information" icon={LuUserRound}>
                   <Controller
                     name="clientName"
                     control={control}
@@ -326,7 +382,7 @@ const ClientOnboarding = () => {
                       />
                     )}
                   />
-                  <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <Controller
                       name="service"
                       control={control}
@@ -387,6 +443,98 @@ const ClientOnboarding = () => {
                         </TextField>
                       )}
                     />
+                    <Controller
+                      name="channel"
+                      control={control}
+                      rules={{ required: "Sourcing is required" }}
+                      render={({ field }) => (
+                        <Autocomplete
+                          freeSolo={canCreateSourcingOption}
+                          selectOnFocus
+                          clearOnBlur={false}
+                          handleHomeEndKeys
+                          options={sourcingOptions}
+                          value={field.value || null}
+                          inputValue={sourcingInput}
+                          onInputChange={(_event, value, reason) => {
+                            if (reason !== "reset") setSourcingInput(value);
+                          }}
+                          onChange={(_event, value) => {
+                            const selected = String(
+                              typeof value === "object"
+                                ? value.inputValue
+                                : value || "",
+                            ).trim();
+                            field.onChange(selected);
+                            setSourcingInput(selected);
+                            if (
+                              canCreateSourcingOption &&
+                              selected &&
+                              !sourcingOptions.some(
+                                (option) =>
+                                  option.toLowerCase() === selected.toLowerCase(),
+                              )
+                            ) {
+                              saveSourcingOption(selected);
+                            }
+                          }}
+                          filterOptions={(options, params) => {
+                            const typedValue = params.inputValue.trim();
+                            const filteredOptions = options.filter((option) =>
+                              option
+                                .toLowerCase()
+                                .includes(typedValue.toLowerCase()),
+                            );
+                            const alreadyExists = options.some(
+                              (option) =>
+                                option.toLowerCase() === typedValue.toLowerCase(),
+                            );
+                            if (
+                              canCreateSourcingOption &&
+                              typedValue &&
+                              !alreadyExists
+                            ) {
+                              filteredOptions.push({
+                                inputValue: typedValue,
+                                label: `+ Add "${typedValue}"`,
+                              });
+                            }
+                            return filteredOptions;
+                          }}
+                          getOptionLabel={(option) =>
+                            typeof option === "string"
+                              ? option
+                              : option.label || ""
+                          }
+                          renderOption={(props, option) => (
+                            <li {...props} key={option.inputValue || option}>
+                              {typeof option === "string" ? (
+                                option
+                              ) : (
+                                <span className="w-full px-1 py-1 text-sm font-pmedium text-[#1E3D73]">
+                                  {option.label}
+                                </span>
+                              )}
+                            </li>
+                          )}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              size="small"
+                              label="Sourcing"
+                              placeholder={
+                                canCreateSourcingOption
+                                  ? "Select or Add Source"
+                                  : "Select Source"
+                              }
+                              error={!!errors.channel}
+                              helperText={errors.channel?.message}
+                              fullWidth
+                            />
+                          )}
+                        />
+                      )}
+                    />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
                     <Controller
@@ -437,96 +585,8 @@ const ClientOnboarding = () => {
                       )}
                     />
                   </div>
-                  <Controller
-                    name="channel"
-                    control={control}
-                    rules={{ required: "Sourcing is required" }}
-                    render={({ field }) => (
-                      <Autocomplete
-                        freeSolo={canCreateSourcingOption}
-                        selectOnFocus
-                        clearOnBlur={false}
-                        handleHomeEndKeys
-                        options={sourcingOptions}
-                        value={field.value || null}
-                        inputValue={sourcingInput}
-                        onInputChange={(_event, value, reason) => {
-                          if (reason !== "reset") setSourcingInput(value);
-                        }}
-                        onChange={(_event, value) => {
-                          const selected = String(
-                            typeof value === "object" ? value.inputValue : value || "",
-                          ).trim();
-                          field.onChange(selected);
-                          setSourcingInput(selected);
-                          if (
-                            canCreateSourcingOption &&
-                            selected &&
-                            !sourcingOptions.some(
-                              (option) => option.toLowerCase() === selected.toLowerCase(),
-                            )
-                          ) {
-                            saveSourcingOption(selected);
-                          }
-                        }}
-                        filterOptions={(options, params) => {
-                          const typedValue = params.inputValue.trim();
-                          const filteredOptions = options.filter((option) =>
-                            option.toLowerCase().includes(typedValue.toLowerCase()),
-                          );
-                          const alreadyExists = options.some(
-                            (option) => option.toLowerCase() === typedValue.toLowerCase(),
-                          );
-                          if (canCreateSourcingOption && typedValue && !alreadyExists) {
-                            filteredOptions.push({
-                              inputValue: typedValue,
-                              label: `+ Add "${typedValue}"`,
-                            });
-                          }
-                          return filteredOptions;
-                        }}
-                        getOptionLabel={(option) =>
-                          typeof option === "string" ? option : option.label || ""
-                        }
-                        renderOption={(props, option) => (
-                          <li {...props} key={option.inputValue || option}>
-                            {typeof option === "string" ? (
-                              option
-                            ) : (
-                              <span className="w-full px-1 py-1 text-sm font-pmedium text-[#1E3D73]">
-                                {option.label}
-                              </span>
-                            )}
-                          </li>
-                        )}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            size="small"
-                            label="Sourcing"
-                            placeholder={
-                              canCreateSourcingOption
-                                ? "Select or Add Source"
-                                : "Select Source"
-                            }
-                            error={!!errors.channel}
-                            helperText={errors.channel?.message}
-                            fullWidth
-                          />
-                        )}
-                      />
-                    )}
-                  />
-                </div>
-              </div>
-              <div className="col-span-2">
-                {/* Section: Job Information */}
-                <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">
-                    Space & Desks
-                  </span>
-                </div>
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
+      </FormSection>
+      <FormSection title="Space & Desks" icon={LuBoxes}>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <Controller
                       name="building"
@@ -615,6 +675,7 @@ const ClientOnboarding = () => {
                         >
                           <MenuItem value="Monthly">Monthly</MenuItem>
                           <MenuItem value="Half-Yearly">Half-Yearly</MenuItem>
+                          <MenuItem value="Yearly">Yearly</MenuItem>
                         </TextField>
                       )}
                     />
@@ -725,29 +786,28 @@ const ClientOnboarding = () => {
                       />
                     </div>
                   </div>
-                  <Controller
-                    name="annualIncrement"
-                    control={control}
-                    //rules={{ required: "Annual Increment is required" }}
-                     rules={{
-                      required: isFlexyDeskClient
-                        ? false
-                        : "Annual Increment is required",
-                    }}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="Annual Increment"
-                        type="number"
-                        disabled={isFlexyDeskClient}
-                        error={!!errors.annualIncrement}
-                        helperText={errors.annualIncrement?.message}
-                        fullWidth
-                      />
-                    )}
-                  />
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Controller
+                      name="annualIncrement"
+                      control={control}
+                      rules={{
+                        required: isFlexyDeskClient
+                          ? false
+                          : "Annual Increment is required",
+                      }}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          label="Annual Increment"
+                          type="number"
+                          disabled={isFlexyDeskClient}
+                          error={!!errors.annualIncrement}
+                          helperText={errors.annualIncrement?.message}
+                          fullWidth
+                        />
+                      )}
+                    />
                     <Controller
                       name="perDeskMeetingCredits"
                       control={control}
@@ -785,14 +845,50 @@ const ClientOnboarding = () => {
                       )}
                     />
                   </div>
-                </div>
-              </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Controller
+                      name="brokerage"
+                      control={control}
+                      rules={{
+                        min: {
+                          value: 0,
+                          message: "Brokerage cannot be negative",
+                        },
+                      }}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          type="number"
+                          label="Brokerage"
+                          inputProps={{ min: 0 }}
+                          error={!!errors.brokerage}
+                          helperText={errors.brokerage?.message}
+                          fullWidth
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="internalLead"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          label="Internal Lead"
+                          fullWidth
+                        />
+                      )}
+                    />
+                  </div>
+      </FormSection>
 
-              <div>
-                <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">KYC</span>
-                </div>
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
+      <FormSection
+        title="KYC"
+        icon={LuShieldCheck}
+        columns={2}
+        fullWidthLastChild
+      >
                   <LocalizationProvider dateAdapter={AdapterDayjs}>
                     <Controller
                       name="startDate"
@@ -905,15 +1001,13 @@ const ClientOnboarding = () => {
                       )}
                     />
                   </LocalizationProvider>
-                </div>
-              </div>
-              <div>
-                <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">
-                    Points Of Contact
-                  </span>
-                </div>
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
+      </FormSection>
+      <FormSection
+        title="Points Of Contact"
+        icon={LuContactRound}
+        columns={2}
+        fullWidthLastChild
+      >
                   <Controller
                     name="localPocName"
                     control={control}
@@ -1009,15 +1103,8 @@ const ClientOnboarding = () => {
                       )}
                     />
                   </div>
-                </div>
-              </div>
-              <div>
-                <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">
-                    Other Details
-                  </span>
-                </div>
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
+      </FormSection>
+      <FormSection title="Other Details" icon={LuFileText} columns={3}>
                   <Controller
                     name="invoiceCompanyName"
                     control={control}
@@ -1064,24 +1151,8 @@ const ClientOnboarding = () => {
                       />
                     )}
                   />
-                </div>
-              </div>
-            </div>
-
-            {/* Submit Button */}
-            <div className="flex items-center justify-center gap-4 mt-4">
-              <PrimaryButton
-                type="submit"
-                title={"Submit"}
-                isLoading={isMutateClientPending}
-                disabled={isMutateClientPending}
-              />
-              <SecondaryButton handleSubmit={handleReset} title={"Reset"} />
-            </div>
-          </form>
-        </div>
-      </PageFrame>
-    </div>
+      </FormSection>
+    </FormLayout>
   );
 };
 

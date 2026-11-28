@@ -12,7 +12,6 @@ import {
   InputLabel,
 } from "@mui/material";
 import PrimaryButton from "../../../components/PrimaryButton";
-import SecondaryButton from "../../../components/SecondaryButton";
 import { State, City } from "country-state-city";
 import { LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -20,7 +19,19 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import PageFrame from "../../../components/Pages/PageFrame";
+import { FormLayout, FormSection } from "../../../components/Forms/FormLayout";
+import {
+  LuBuilding2,
+  LuClock,
+  LuFileText,
+  LuReceipt,
+  LuRotateCcw,
+  LuSave,
+  LuSend,
+  LuShieldCheck,
+  LuUserPlus,
+  LuUserRound,
+} from "react-icons/lu";
 import {
   isAlphanumeric,
   isValidEmail,
@@ -32,6 +43,8 @@ import UploadFileInput from "../../../components/UploadFileInput";
 import useAuth from "../../../hooks/useAuth";
 import { queryClient } from "../../../main";
 
+const DAY_PASS_CLIENT_DRAFT_KEY = "dayPassAddClientDraft";
+
 const AddClient = () => {
   const {
     control,
@@ -39,6 +52,7 @@ const AddClient = () => {
     reset,
     watch,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm({
     mode: "onChange",
@@ -339,19 +353,56 @@ const AddClient = () => {
     reset();
   };
 
+  const handleSaveAsDraft = () => {
+    try {
+      window.localStorage.setItem(
+        DAY_PASS_CLIENT_DRAFT_KEY,
+        JSON.stringify(getValues()),
+      );
+      toast.success("Day pass client draft saved");
+    } catch {
+      toast.error("Unable to save draft");
+    }
+  };
+
   return (
-    <div className=" p-4">
-      <PageFrame>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              {/* Section: Basic Information */}
-              <div className="py-4 border-b-default border-borderGray">
-                <span className="text-subtitle font-pmedium">
-                  Client Details
-                </span>
-              </div>
-              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
+    <FormLayout
+      title=" Add Client"
+      icon={LuUserPlus}
+      onSubmit={handleSubmit(onSubmit)}
+      actions={
+        <div className="shared-form-actions">
+          <button
+            type="button"
+            className="shared-form-action-button shared-form-reset-button"
+            onClick={handleReset}
+          >
+            <LuRotateCcw aria-hidden="true" />
+            <span>Reset</span>
+          </button>
+          <div className="shared-form-primary-actions">
+            <button
+              type="button"
+              className="shared-form-action-button shared-form-draft-button"
+              onClick={handleSaveAsDraft}
+            >
+              <LuSave aria-hidden="true" />
+              <span>Save as Draft</span>
+            </button>
+            <PrimaryButton
+              type="submit"
+              title="Submit"
+              icon={LuSend}
+              isLoading={isMutateVisitor}
+              disabled={
+                isMutateVisitor || isCheckingVisitor || Boolean(existingVisitor)
+              }
+            />
+          </div>
+        </div>
+      }
+    >
+      <FormSection title="Client Details" icon={LuUserRound}>
                 <div hidden>
                   <Controller
                     name="visitorType"
@@ -412,7 +463,7 @@ const AddClient = () => {
                   />
                 </div>
 
-                <div className="flex gap-4 items-center">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
                   <Controller
                     name="phoneNumber"
                     control={control}
@@ -454,6 +505,27 @@ const AddClient = () => {
                         <MenuItem value="male">Male</MenuItem>
                         <MenuItem value="female">Female</MenuItem>
                       </TextField>
+                    )}
+                  />
+                  <Controller
+                    name="email"
+                    control={control}
+                    rules={{
+                      required: "Email is required",
+                      validate: {
+                        isValidEmail,
+                        noOnlyWhitespace,
+                      },
+                    }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        error={!!errors.email}
+                        helperText={errors.email?.message}
+                        label="Email"
+                        fullWidth
+                      />
                     )}
                   />
                 </div>
@@ -508,29 +580,7 @@ const AddClient = () => {
                     )}
                   </div>
                 )}
-                <div className="flex gap-4 items-center">
-                  <Controller
-                    name="email"
-                    control={control}
-                    rules={{
-                      required: "Email is required",
-                      validate: {
-                        isValidEmail,
-                        noOnlyWhitespace,
-                      },
-                    }}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        error={!!errors.email}
-                        helperText={errors.email?.message}
-                        label="Email"
-                        fullWidth
-                      />
-                    )}
-                  />
-
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
                   <Controller
                     name="purposeOfVisit"
                     control={control}
@@ -562,8 +612,6 @@ const AddClient = () => {
                       </TextField>
                     )}
                   />
-                </div>
-                <div className="flex gap-4">
                   <div className="flex-1">
                     <Controller
                       name="location"
@@ -628,16 +676,9 @@ const AddClient = () => {
                     />
                   </div>
                 </div>
-              </div>
-            </div>
+      </FormSection>
 
-            <div>
-              <div className="py-4 border-b-default border-borderGray">
-                <span className="text-subtitle font-pmedium">
-                  Company Details
-                </span>
-              </div>
-              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
+      <FormSection title="Company Details" icon={LuBuilding2}>
                 {/* <Controller
                   name="clientCompany"
                   control={control}
@@ -802,17 +843,9 @@ const AddClient = () => {
                     />
                   )}
                 />
-              </div>
-            </div>
-          </div>
+      </FormSection>
 
-          <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4">
-            {/*GST*/}
-            <div>
-              <div className="py-4 border-b-default border-borderGray">
-                <span className="text-subtitle font-pmedium">GST</span>
-              </div>
-              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4 p-4 ">
+      <FormSection title="GST" icon={LuReceipt} columns={2}>
                 <Controller
                   name="gstNumber"
                   control={control}
@@ -865,15 +898,9 @@ const AddClient = () => {
                     />
                   )}
                 />
-              </div>
-            </div>
+      </FormSection>
 
-            {/*Verification*/}
-            <div>
-              <div className="py-4 border-b-default border-borderGray">
-                <span className="text-subtitle font-pmedium">Verification</span>
-              </div>
-              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4 p-4 ">
+      <FormSection title="Verification" icon={LuShieldCheck} columns={2}>
                 {/* <Controller
                   name="idProof.idType"
                   control={control}
@@ -944,18 +971,9 @@ const AddClient = () => {
                     />
                   )}
                 />
-              </div>
-            </div>
+      </FormSection>
 
-            <div></div>
-          </div>
-          <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4">
-            {/*Others*/}
-            <div>
-              <div className="py-4 border-b-default border-borderGray">
-                <span className="text-subtitle font-pmedium">Others</span>
-              </div>
-              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4 p-4 ">
+      <FormSection title="Others" icon={LuFileText} columns={3}>
                 <Controller
                   name="idProof.idType"
                   control={control}
@@ -1053,15 +1071,9 @@ const AddClient = () => {
                     />
                   )}
                 />
-              </div>
-            </div>
+      </FormSection>
 
-            {/*TIMINGS*/}
-            <div>
-              <div className="py-4 border-b-default border-borderGray">
-                <span className="text-subtitle font-pmedium">Timings</span>
-              </div>
-              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4 p-4 ">
+      <FormSection title="Timings" icon={LuClock} columns={2}>
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                   <Controller
                     name="checkIn"
@@ -1139,24 +1151,8 @@ const AddClient = () => {
                     )}
                   />
                 </LocalizationProvider>
-              </div>
-            </div>
-          </div>
-          {/* Submit Button */}
-          <div className="flex items-center justify-center gap-4">
-            <PrimaryButton
-              type="submit"
-              title={"Submit"}
-              isLoading={isMutateVisitor}
-              disabled={
-                isMutateVisitor || isCheckingVisitor || Boolean(existingVisitor)
-              }
-            />
-            <SecondaryButton handleSubmit={handleReset} title={"Reset"} />
-          </div>
-        </form>
-      </PageFrame>
-    </div>
+      </FormSection>
+    </FormLayout>
   );
 };
 export default AddClient;

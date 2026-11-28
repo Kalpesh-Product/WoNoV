@@ -133,6 +133,16 @@ const clientSchema = new mongoose.Schema(
     annualIncrement: {
       type: Number,
     },
+    brokerage: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    internalLead: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     perDeskMeetingCredits: {
       type: Number,
       default: 0,
